@@ -21,6 +21,11 @@ async function getDashboardClients() {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value ?? null;
   const clients = await getDashboardClients();
-  return <AppShell clients={clients}>{children}</AppShell>;
+  return (
+    <AppShell accessToken={accessToken} clients={clients}>
+      {children}
+    </AppShell>
+  );
 }

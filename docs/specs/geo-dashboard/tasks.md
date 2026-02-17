@@ -305,27 +305,27 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 8.5_
 
 - [ ] 13. Uyarılar ve Bildirimler
-  - [ ] 13.1 Uyarılar sayfası oluştur
+  - [x] 13.1 Uyarılar sayfası oluştur
     - Uyarı listesiyle sayfa düzeni oluştur
     - Uyarıları tarihe göre sıralı göster
     - Önem derecesi rozetlerini göster (bilgi, uyarı, kritik)
     - Görüntüleme sırasında uyarıları okundu olarak işaretle
     - _Gereksinimler: 9.5_
   
-  - [ ] 13.2 Uyarı kuralı yönetimi oluştur
+  - [x] 13.2 Uyarı kuralı yönetimi oluştur
     - Uyarı kuralları oluşturmak için form oluştur
     - Metrik seçimini destekle (bahsetmeler, duygu, alıntılar, halüsinasyonlar, rakip hareketi)
     - Koşul ve eşik girdileri ekle
     - Kural oluşturma için Server Action oluştur
     - _Gereksinimler: 9.1, 9.4_
   
-  - [ ] 13.3 Uyarı kuralı kontrolünü uygula
+  - [x] 13.3 Uyarı kuralı kontrolünü uygula
     - Her 5 dakikada bir uyarı kurallarını kontrol etmek için arka plan işi oluştur
     - Mevcut metrikleri eşiklerle karşılaştır
     - Kurallar tetiklendiğinde uyarılar oluştur
     - _Gereksinimler: 9.2, 9.3_
   
-  - [ ] 13.4 Bildirim zili bileşeni oluştur
+  - [x] 13.4 Bildirim zili bileşeni oluştur
     - Başlıkta bildirim zili ikonu oluştur
     - Okunmamış sayı rozetini göster
     - Son uyarılarla dropdown göster

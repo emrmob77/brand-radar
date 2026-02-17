@@ -6,6 +6,7 @@ export type NavIcon =
   | "optimizations"
   | "clients"
   | "forensics"
+  | "alerts"
   | "hallucinations"
   | "settings";
 
@@ -27,6 +28,7 @@ export const mainNavigation: NavItem[] = [
 ];
 
 export const systemNavigation: NavItem[] = [
+  { href: "/alerts", label: "Alerts", icon: "alerts", hint: "Rule monitor" },
   { href: "/hallucinations", label: "Hallucinations", icon: "hallucinations", hint: "Risk control" },
   { href: "/settings", label: "Settings", icon: "settings", hint: "Workspace config" }
 ];

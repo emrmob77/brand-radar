@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { NotificationBell } from "@/components/alerts/notification-bell";
 import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
   optimizations: Sparkles,
   clients: Users,
   forensics: FileSearch,
+  alerts: Bell,
   hallucinations: AlertTriangle,
   settings: Settings
 };
@@ -49,6 +51,7 @@ type AppShellProps = {
   children: React.ReactNode;
   hideSidebar?: boolean;
   clients?: ClientSummary[];
+  accessToken?: string | null;
 };
 
 type DashboardHeaderProps = {
@@ -179,7 +182,7 @@ function SidebarContent({ pathname, selectedClientId }: { pathname: string; sele
   );
 }
 
-export function AppShell({ children, hideSidebar = false, clients = [] }: AppShellProps) {
+export function AppShell({ children, hideSidebar = false, clients = [], accessToken = null }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -361,10 +364,7 @@ export function AppShell({ children, hideSidebar = false, clients = [] }: AppShe
             </div>
 
             <div className="flex items-center gap-2">
-              <button aria-label="Notifications" className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-white text-text-secondary hover:text-ink" type="button">
-                <Bell className="h-4 w-4" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-critical" />
-              </button>
+              <NotificationBell accessToken={accessToken} clientId={selectedClient?.id ?? null} />
               <button className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft" type="button">
                 <CalendarRange className="h-3.5 w-3.5 text-text-secondary" />
                 This Month
