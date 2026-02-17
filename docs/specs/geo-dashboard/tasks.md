@@ -16,14 +16,14 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
 
 ## Görevler
 
-- [ ] 1. Proje kurulumu ve altyapı
-  - [ ] 1.1 Mevcut HTML tasarımını Next.js projesine entegre et
+- [x] 1. Proje kurulumu ve altyapı
+  - [x] 1.1 Mevcut HTML tasarımını Next.js projesine entegre et
     - brand-radar.html dosyasını incele ve bileşenlere ayır
     - HTML'deki tasarım öğelerini ve stilleri belirle
     - Tasarım referansı olarak kullanılacak bileşen listesi oluştur
     - _Gereksinimler: 2.1, 17.1_
   
-  - [ ] 1.2 Next.js 14 projesini başlat
+  - [x] 1.2 Next.js 14 projesini başlat
     - Next.js 14 projesini TypeScript ve App Router ile başlat
     - Tailwind CSS, Shadcn/ui ve temel bağımlılıkları yapılandır
     - Ortam değişkenlerini ve Supabase istemci yapılandırmasını ayarla
@@ -32,7 +32,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 11.1, 11.2_
 
 - [ ] 2. Supabase veritabanı şeması ve kimlik doğrulama
-  - [ ] 2.1 Tüm tablolarla veritabanı şeması oluştur
+  - [x] 2.1 Tüm tablolarla veritabanı şeması oluştur
     - agencies, users, clients, platforms, mentions, citations, competitors, queries, optimizations, hallucinations, alert_rules ve alerts tabloları için SQL migration yaz
     - Performans optimizasyonu için indeksler ekle
     - Foreign key ilişkilerini ve cascade delete'leri ayarla
@@ -50,7 +50,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Oturum yönetimi ve token yenilemeyi uygula
     - _Gereksinimler: 11.1, 10.1_
   
-  - [ ] 2.4 İlk platform verilerini ekle
+  - [x] 2.4 İlk platform verilerini ekle
     - ChatGPT, Perplexity, Google AI Overviews, Claude ve Bing Copilot platformlarını ekle
     - Platform ikonlarını ve meta verilerini ekle
     - _Gereksinimler: 3.1_

@@ -19,4 +19,7 @@
 
 - `supabase/config.toml` is pinned to the active project ref.
 - DB schema and migrations should be created under `supabase/migrations`.
-
+- Applied via MCP on 2026-02-17:
+  - `geo_dashboard_core_schema`
+  - `geo_dashboard_rls_policies`
+  - `geo_dashboard_seed_platforms`

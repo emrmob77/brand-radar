@@ -1,0 +1,259 @@
+"use client";
+
+import {
+  AlertTriangle,
+  Bell,
+  Bot,
+  CalendarRange,
+  ChartNoAxesCombined,
+  ChevronDown,
+  FileSearch,
+  Gauge,
+  LayoutDashboard,
+  Menu,
+  Search,
+  Settings,
+  Sparkles,
+  Users,
+  X
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useMemo, useState } from "react";
+import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
+
+const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
+  dashboard: LayoutDashboard,
+  visibility: Gauge,
+  mentions: Bot,
+  competitors: ChartNoAxesCombined,
+  optimizations: Sparkles,
+  clients: Users,
+  forensics: FileSearch,
+  hallucinations: AlertTriangle,
+  settings: Settings
+};
+
+const allNavigation: NavItem[] = [...mainNavigation, ...systemNavigation];
+
+type AppShellProps = {
+  children: React.ReactNode;
+  hideSidebar?: boolean;
+};
+
+type DashboardHeaderProps = {
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+};
+
+type NavigationGroupProps = {
+  title: string;
+  items: NavItem[];
+  pathname: string;
+};
+
+function NavigationGroup({ title, items, pathname }: NavigationGroupProps) {
+  return (
+    <section>
+      <p className="px-1.5 text-[9px] font-mono uppercase tracking-[0.18em] text-text-secondary md:text-center xl:text-left">
+        <span className="md:hidden xl:inline">{title}</span>
+      </p>
+      <ul className="mt-1.5 space-y-1">
+        {items.map((item) => {
+          const Icon = iconMap[item.icon];
+          const active = pathname === item.href;
+
+          return (
+            <li key={item.href}>
+              <Link
+                className={cn(
+                  "group relative flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all focus-ring md:justify-center md:px-2 xl:justify-start xl:px-2.5",
+                  active
+                    ? "border-brand/25 bg-brand text-white shadow-[0_8px_20px_rgba(17,19,24,0.22)]"
+                    : "border-transparent bg-white/40 text-text-secondary hover:border-surface-border hover:bg-white hover:text-ink"
+                )}
+                href={item.href}
+                title={item.label}
+              >
+                <span className={cn("grid h-6 w-6 place-items-center rounded-md", active ? "bg-white/12" : "bg-brand-soft")}>
+                  <Icon className={cn("h-3 w-3", active ? "text-white" : "text-ink")} />
+                </span>
+                <div className="min-w-0 md:hidden xl:block">
+                  <p className="truncate text-[13px] font-semibold leading-tight">{item.label}</p>
+                  <p className={cn("truncate text-[11px] leading-tight", active ? "text-white/75" : "text-text-secondary")}>{item.hint}</p>
+                </div>
+                <span
+                  className={cn(
+                    "pointer-events-none absolute left-[calc(100%+0.55rem)] top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[11px] font-semibold opacity-0 transition-opacity md:block md:group-hover:opacity-100 xl:hidden",
+                    active
+                      ? "border-brand bg-brand text-white"
+                      : "border-surface-border bg-white text-ink shadow-[0_8px_16px_rgba(17,19,24,0.1)]"
+                  )}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function SidebarContent({ pathname }: { pathname: string }) {
+  return (
+    <div className="flex min-h-full flex-col bg-sidebar-bg">
+      <div className="border-b border-surface-border px-4 py-4">
+        <div className="rounded-2xl border border-surface-border bg-white p-3">
+          <div className="flex items-center gap-2.5 md:justify-center xl:justify-start">
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-white">
+              <ChartNoAxesCombined className="h-3.5 w-3.5" />
+            </div>
+            <div className="md:hidden xl:block">
+              <p className="text-[9px] font-mono uppercase tracking-[0.18em] text-text-secondary">Brand Radar</p>
+              <p className="mt-0.5 text-[13px] font-semibold text-ink">Enterprise GEO</p>
+            </div>
+          </div>
+          <p className="mt-2.5 rounded-lg border border-surface-border bg-brand-soft px-2.5 py-1 text-[10px] text-text-secondary md:hidden xl:block">
+            Control Center
+          </p>
+        </div>
+      </div>
+
+      <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
+        <NavigationGroup items={mainNavigation} pathname={pathname} title="Workspace" />
+        <div className="mt-5">
+          <NavigationGroup items={systemNavigation} pathname={pathname} title="System" />
+        </div>
+      </nav>
+
+      <div className="border-t border-surface-border px-4 py-3.5">
+        <div className="rounded-xl border border-surface-border bg-white p-2.5">
+          <div className="flex items-center gap-2.5 md:justify-center xl:justify-start">
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-soft text-xs font-bold text-ink">EA</div>
+            <div className="min-w-0 flex-1 md:hidden xl:block">
+              <p className="truncate text-[13px] font-semibold text-ink">Emrah A.</p>
+              <p className="truncate text-[11px] text-text-secondary">admin@brandradar.ai</p>
+            </div>
+            <button aria-label="Notifications" className="focus-ring rounded-lg p-1.5 text-text-secondary hover:bg-brand-soft hover:text-ink" type="button">
+              <Bell className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-2.5 rounded-xl border border-surface-border bg-white px-2.5 py-2 md:hidden xl:block">
+          <p className="text-[9px] font-mono uppercase tracking-[0.16em] text-text-secondary">Data Health</p>
+          <div className="mt-1.5 flex items-center justify-between text-[11px]">
+            <p className="font-semibold text-ink">Signals Online</p>
+            <p className="font-semibold text-ink">98.2%</p>
+          </div>
+          <div className="mt-1.5 h-1 rounded-full bg-brand-soft">
+            <div className="h-1 w-[98.2%] rounded-full bg-brand" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AppShell({ children, hideSidebar = false }: AppShellProps) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const shouldShowSidebar = useMemo(() => !hideSidebar, [hideSidebar]);
+  const activeItem = useMemo(() => allNavigation.find((item) => pathname === item.href), [pathname]);
+
+  return (
+    <div className="app-shell-bg flex min-h-screen bg-background-dark">
+      {shouldShowSidebar && (
+        <>
+          <div
+            className={cn(
+              "fixed inset-0 z-30 bg-ink/45 transition-opacity md:hidden",
+              mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+            onClick={() => setMobileOpen(false)}
+          />
+
+          <aside
+            className={cn(
+              "fixed inset-y-0 left-0 z-40 w-[272px] border-r border-surface-border bg-sidebar-bg transition-transform md:sticky md:top-0 md:h-screen md:w-[90px] md:translate-x-0 xl:w-[272px]",
+              mobileOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
+            <div className="flex items-center justify-end border-b border-surface-border px-3 py-2 md:hidden">
+              <button aria-label="Close navigation" className="focus-ring rounded-lg p-2 text-text-secondary hover:bg-white" onClick={() => setMobileOpen(false)} type="button">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <SidebarContent pathname={pathname} />
+          </aside>
+        </>
+      )}
+
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        {shouldShowSidebar && (
+          <header className="glass-header sticky top-0 z-20 flex h-[72px] items-center justify-between gap-3 px-4 md:px-8">
+            <div className="flex items-center gap-3">
+              <button
+                aria-label="Open navigation"
+                className="focus-ring inline-flex h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-white text-text-secondary hover:text-ink md:hidden"
+                onClick={() => setMobileOpen(true)}
+                type="button"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+
+              <div className="hidden md:block">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">Workspace</p>
+                <p className="mt-0.5 text-sm font-semibold text-ink">{activeItem?.label ?? "Dashboard"}</p>
+              </div>
+
+              <div className="hidden items-center gap-2 rounded-xl border border-surface-border bg-white px-3 py-2 lg:flex">
+                <Search className="h-4 w-4 text-text-secondary" />
+                <label className="sr-only" htmlFor="global-search">
+                  Search
+                </label>
+                <input
+                  className="w-60 bg-transparent text-sm text-ink placeholder:text-text-secondary focus:outline-none"
+                  id="global-search"
+                  placeholder="Search clients, mentions, alerts"
+                  type="text"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft" type="button">
+                <CalendarRange className="h-3.5 w-3.5 text-text-secondary" />
+                This Month
+                <ChevronDown className="h-3.5 w-3.5 text-text-secondary" />
+              </button>
+              <button className="focus-ring rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600" type="button">
+                Export
+              </button>
+            </div>
+          </header>
+        )}
+
+        <main className="flex-1 overflow-y-auto px-4 pb-10 pt-6 md:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardHeader({ title, description, actions }: DashboardHeaderProps) {
+  return (
+    <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="max-w-3xl">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">Brand Radar Intelligence</p>
+        <h1 className="mt-2 text-[1.9rem] font-semibold leading-tight text-ink md:text-[2.4rem]">{title}</h1>
+        {description ? <p className="mt-2 text-sm leading-relaxed text-text-secondary">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+    </section>
+  );
+}
