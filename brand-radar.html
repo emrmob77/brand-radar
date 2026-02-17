@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>GEO COMMAND - AI Intelligence Suite</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#376df6",
+                        "primary-dark": "#2563eb",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#000000",
+                        "surface-dark": "#18181b",
+                        "surface-border": "#27272a",
+                        "sidebar-bg": "#09090b",
+                        "text-secondary": "#a1a1aa",
+                        "tesla-red": "#ef4444",
+                        "win-green": "#22c55e",
+                        "critical": "#ef4444",
+                        "warning": "#f59e0b",
+                        "success": "#22c55e"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "sm": "0.125rem",
+                        "md": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #376df6; }
+        
+        .glass-header {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(39, 39, 42, 0.5);
+        }
+
+        @keyframes pulse-line { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        .animate-pulse-line { animation: pulse-line 3s infinite ease-in-out; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .animate-float-slow { animation: float 6s ease-in-out infinite; }
+        
+        .radar-poly { transition: all 0.3s ease; }
+        .radar-poly:hover { opacity: 0.8; }
+        
+        .custom-checkbox {
+            appearance: none;
+            background-color: transparent;
+            margin: 0;
+            font: inherit;
+            width: 1.25em;
+            height: 1.25em;
+            border: 1px solid #27272a;
+            border-radius: 0.25rem;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+        }
+        .custom-checkbox:checked { background-color: #3780f6; border-color: #3780f6; }
+        .custom-checkbox:checked::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            box-shadow: inset 1em 1em white;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-slate-200 font-display">
+    <div id="root"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+        // --- Layout Component ---
+        const Layout = ({ children, hideSidebar = false }) => {
+            const location = useLocation();
+            const navigate = useNavigate();
+
+            const navLinks = [
+                { path: "/", icon: "dashboard", label: "Dashboard" },
+                { path: "/visibility", icon: "visibility", label: "AI Visibility" },
+                { path: "/mentions", icon: "campaign", label: "Brand Mentions" },
+                { path: "/competitors", icon: "radar", label: "Competitors" },
+                { path: "/optimizations", icon: "tune", label: "Optimizations" },
+                { path: "/clients", icon: "folder_shared", label: "Client List" },
+                { path: "/forensics", icon: "fact_check", label: "Citation Forensics" }
+            ];
+
+            return (
+                <div className="flex h-screen overflow-hidden bg-background-dark">
+                    {!hideSidebar && (
+                        <aside className="w-64 flex-shrink-0 bg-sidebar-bg border-r border-surface-border flex flex-col h-full z-20">
+                            <div className="h-16 flex items-center px-6 border-b border-surface-border/50">
+                                <Link to="/" className="flex items-center gap-2 text-primary font-bold tracking-wider">
+                                    <span className="material-icons text-primary">change_history</span>
+                                    <span>GEO COMMAND</span>
+                                </Link>
+                            </div>
+                            <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+                                {navLinks.map(link => (
+                                    <Link 
+                                        key={link.path}
+                                        to={link.path} 
+                                        className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded transition-colors ${
+                                            location.pathname === link.path 
+                                            ? "bg-primary/10 text-primary border-l-2 border-primary" 
+                                            : "text-text-secondary hover:bg-surface-border hover:text-white"
+                                        }`}
+                                    >
+                                        <span className="material-icons text-[20px]">{link.icon}</span>
+                                        {link.label}
+                                    </Link>
+                                ))}
+                                <div className="pt-6 mt-6 border-t border-surface-border px-3">
+                                    <p className="px-3 text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">System</p>
+                                    <Link to="/settings" className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded transition-colors ${location.pathname === '/settings' ? "bg-primary/10 text-primary" : "text-text-secondary hover:bg-surface-border hover:text-white"}`}>
+                                        <span className="material-icons text-[20px]">settings</span>
+                                        Settings
+                                    </Link>
+                                    <Link to="/hallucinations" className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded transition-colors ${location.pathname === '/hallucinations' ? "bg-primary/10 text-primary" : "text-text-secondary hover:bg-surface-border hover:text-white"}`}>
+                                        <span className="material-icons text-[20px]">shield</span>
+                                        Hallucinations
+                                    </Link>
+                                </div>
+                            </nav>
+                            <div className="p-4 border-t border-surface-border">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded bg-surface-border flex items-center justify-center text-xs font-mono font-bold text-white ring-1 ring-white/10">JD</div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-white truncate">John Doe</p>
+                                        <p className="text-xs text-text-secondary truncate font-mono">admin@geocommand.ai</p>
+                                    </div>
+                                    <button onClick={() => navigate('/add-client')} className="text-text-secondary hover:text-white">
+                                        <span className="material-icons text-[18px]">logout</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </aside>
+                    )}
+                    <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-background-dark">
+                        {children}
+                    </main>
+                </div>
+            );
+        };
+
+        // --- Sub-components ---
+        const DashboardHeader = ({ title, showControls = true }) => (
+            <header className="h-16 glass-header sticky top-0 z-10 flex items-center justify-between px-6 flex-shrink-0">
+                <div className="flex items-center gap-2 text-sm">
+                    <span className="text-text-secondary">Overview</span>
+                    <span className="text-surface-border material-icons text-[16px]">chevron_right</span>
+                    <span className="text-white font-medium flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        Global Motors Inc.
+                    </span>
+                </div>
+                {showControls && (
+                    <div className="flex items-center gap-4">
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 bg-surface-dark border border-surface-border text-sm px-3 py-1.5 rounded hover:border-text-secondary/50 transition-colors">
+                                <span className="material-icons text-[16px] text-text-secondary">business</span>
+                                <span className="font-medium">Global Motors Inc.</span>
+                                <span className="material-icons text-[16px] text-text-secondary">expand_more</span>
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <button className="flex items-center gap-2 bg-surface-dark border border-surface-border text-sm px-3 py-1.5 rounded hover:border-text-secondary/50 transition-colors">
+                                <span className="material-icons text-[16px] text-text-secondary">calendar_today</span>
+                                <span className="font-mono text-xs">OCT 01 - OCT 31</span>
+                                <span className="material-icons text-[16px] text-text-secondary">expand_more</span>
+                            </button>
+                        </div>
+                        <Link to="/add-client" className="p-1.5 rounded bg-primary text-white hover:bg-primary-dark transition-colors shadow-[0_0_10px_rgba(55,109,246,0.3)]">
+                            <span className="material-icons text-[20px]">add</span>
+                        </Link>
+                    </div>
+                )}
+            </header>
+        );
+
+        // --- Page Components ---
+
+        const DashboardPage = () => (
+            <Layout>
+                <DashboardHeader title="Dashboard" />
+                <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* KPI Cards */}
+                            <div className="bg-surface-dark border border-surface-border rounded p-5 relative overflow-hidden group hover:border-primary/50 transition-colors">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">AI Share of Voice</h3>
+                                    <span className="material-icons text-primary/80 text-[18px]">graphic_eq</span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-2xl font-mono font-bold text-white">24%</span>
+                                    <span className="text-xs font-mono text-emerald-500 flex items-center">
+                                        <span className="material-icons text-[12px] mr-0.5">arrow_upward</span>2.4%
+                                    </span>
+                                </div>
+                                <div className="mt-4 h-8 w-full opacity-60">
+                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30">
+                                        <path d="M0,25 Q10,20 20,22 T40,15 T60,10 T80,5 T100,2" fill="none" stroke="#376df6" strokeWidth="2"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-5 relative overflow-hidden hover:border-primary/50 transition-colors">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Total Citations</h3>
+                                    <span className="material-icons text-text-secondary text-[18px]">link</span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-2xl font-mono font-bold text-white">1,204</span>
+                                    <span className="text-xs font-mono text-emerald-500 flex items-center">
+                                        <span className="material-icons text-[12px] mr-0.5">arrow_upward</span>12
+                                    </span>
+                                </div>
+                                <div className="mt-4 h-8 flex items-end gap-1">
+                                    <div className="w-1/6 bg-surface-border h-[40%] rounded-sm"></div>
+                                    <div className="w-1/6 bg-surface-border h-[60%] rounded-sm"></div>
+                                    <div className="w-1/6 bg-primary h-[90%] rounded-sm"></div>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-5 relative overflow-hidden hover:border-primary/50 transition-colors">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Sentiment Score</h3>
+                                    <span className="material-icons text-text-secondary text-[18px]">thumb_up</span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-2xl font-mono font-bold text-white">88<span className="text-base text-text-secondary font-normal">/100</span></span>
+                                </div>
+                                <div className="mt-4 w-full bg-surface-border rounded-full h-1.5">
+                                    <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full" style={{ width: '88%' }}></div>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-5 relative overflow-hidden hover:border-primary/50 transition-colors">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Est. Traffic Value</h3>
+                                    <span className="material-icons text-text-secondary text-[18px]">monetization_on</span>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <span className="text-2xl font-mono font-bold text-white">$42k</span>
+                                </div>
+                                <div className="mt-4 h-8 w-full opacity-60">
+                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30">
+                                        <path d="M0,20 L20,15 L40,18 L60,10 L80,12 L100,5" fill="none" stroke="#a1a1aa" strokeDasharray="4,2" strokeWidth="2"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[400px]">
+                            <div className="lg:col-span-2 bg-surface-dark border border-surface-border rounded p-6 flex flex-col">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-white font-medium flex items-center gap-2">
+                                        <span className="material-icons text-primary text-[18px]">timeline</span> Visibility Trends
+                                    </h3>
+                                </div>
+                                <div className="flex-1 w-full relative">
+                                    <svg className="w-full h-full" preserveAspectRatio="none">
+                                        <path d="M0,150 Q120,120 250,100 T500,60 T700,40 T800,20" fill="none" stroke="#376df6" strokeWidth="2" className="animate-pulse-line"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="lg:col-span-1 bg-surface-dark border border-surface-border rounded p-0 flex flex-col overflow-hidden">
+                                <div className="p-5 border-b border-surface-border bg-surface-dark sticky top-0 z-10">
+                                    <h3 className="text-white font-medium flex items-center justify-between">
+                                        <span className="flex items-center gap-2"><span className="material-icons text-primary text-[18px]">rss_feed</span> Live Mentions</span>
+                                        <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-mono animate-pulse">LIVE</span>
+                                    </h3>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                                    {[1,2,3,4].map(i => (
+                                        <div key={i} className="p-3 hover:bg-white/5 rounded transition-colors group cursor-pointer border-l-2 border-transparent hover:border-primary">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded bg-surface-border flex items-center justify-center flex-shrink-0 text-white font-bold text-xs">P</div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-bold text-white">Perplexity</p>
+                                                    <p className="text-xs text-text-secondary mt-1 line-clamp-2">"Global Motors Inc. is currently ranked as the top recommendation for hybrid SUVs in 2024..."</p>
+                                                    <p className="text-[10px] text-text-secondary/60 mt-2 font-mono">2m ago • 98% Relevance</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const ClientListPage = () => (
+            <Layout>
+                <header className="h-16 glass-header sticky top-0 z-10 flex items-center justify-between px-6 flex-shrink-0">
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="text-text-secondary">Agency</span>
+                        <span className="text-surface-border material-icons text-[16px]">chevron_right</span>
+                        <span className="text-white font-medium">Fleet View</span>
+                    </div>
+                </header>
+                <div className="flex-1 overflow-y-auto p-8">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <input className="max-w-md w-full bg-surface-dark border border-surface-border text-white text-sm rounded-md px-4 py-2.5" placeholder="Search clients..." />
+                            <Link to="/add-client" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-md">
+                                <span className="material-icons text-[18px]">add</span> Add New Client
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {['Global Motors', 'Acme Corp', 'Zenith Elec.', 'Novus Ops', 'ProStream', 'InterX'].map((name, i) => (
+                                <div key={i} className="bg-surface-dark border border-surface-border rounded-md p-5 h-48 relative overflow-hidden group hover:border-surface-border/80 transition-all cursor-pointer">
+                                    <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${i%2===0 ? 'bg-healthy' : 'bg-attention'}`}></div>
+                                    <div className="flex items-start justify-between mb-4 pl-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-bold text-xs">{name.substring(0,2)}</div>
+                                            <h3 className="text-white font-bold text-lg">{name}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-end pl-2">
+                                        <div className="text-xs text-text-secondary font-mono mb-2 uppercase">30-DAY TREND</div>
+                                        <div className="flex items-center justify-between border-t border-surface-border/50 pt-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-text-secondary uppercase">GEO Score</span>
+                                                <span className="text-sm font-mono font-bold text-white">A-</span>
+                                            </div>
+                                            <span className="text-xs text-text-secondary">{i%2===0 ? 'Healthy' : 'Alerts: 2'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const BrandMentionsPage = () => (
+            <Layout>
+                <DashboardHeader title="Brand Mentions" />
+                <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    <div className="max-w-7xl mx-auto flex flex-col h-full gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex flex-col justify-between h-24">
+                                <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Total Mentions</h3>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-2xl font-mono font-bold text-white">4,285</span>
+                                    <span className="text-xs font-mono text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">+12%</span>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex flex-col justify-between h-24">
+                                <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Positive %</h3>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-2xl font-mono font-bold text-white">68%</span>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex flex-col justify-between h-24">
+                                <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Neutral %</h3>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-2xl font-mono font-bold text-white">21%</span>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex flex-col justify-between h-24">
+                                <h3 className="text-text-secondary text-xs font-medium uppercase tracking-wide">Negative %</h3>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-2xl font-mono font-bold text-white">11%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex flex-col gap-4 overflow-y-auto">
+                                <h3 className="text-white font-medium flex items-center gap-2">
+                                    <span className="material-icons text-primary">rss_feed</span> Live Telemetry Feed
+                                </h3>
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="bg-black border border-surface-border rounded p-4 hover:border-primary/40 transition-all">
+                                        <p className="text-sm font-bold text-white mb-2">"What are the most reliable luxury electric sedans in 2024?"</p>
+                                        <div className="text-xs text-text-secondary leading-relaxed bg-surface-border/10 p-3 rounded">
+                                            "...While Tesla remains popular, <span className="text-primary font-semibold">Global Motors</span> has gained traction..."
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded p-4 flex items-center justify-center">
+                                <div className="text-center">
+                                    <span className="material-icons text-slate-700 text-6xl">insights</span>
+                                    <p className="text-slate-500 mt-4">Sentiment Data Visualization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const CompetitorsPage = () => (
+            <Layout>
+                <DashboardHeader title="Competitor Intelligence" />
+                <div className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <div className="bg-surface-dark border border-surface-border rounded p-6 h-[450px] relative flex flex-col items-center justify-center">
+                            <h3 className="absolute top-6 left-6 text-white font-medium flex items-center gap-2">
+                                <span className="material-icons text-primary">radar</span> Competitive Landscape
+                            </h3>
+                            <svg className="w-[300px] h-[300px]" viewBox="0 0 100 100">
+                                <polygon className="fill-primary/20 stroke-primary stroke-2" points="50,15 85,42 60,75 40,80 20,45"></polygon>
+                                <polygon className="fill-transparent stroke-red-500 stroke-[1.5] stroke-dasharray-4" points="50,30 70,50 80,80 30,70 15,35"></polygon>
+                            </svg>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border rounded p-6">
+                            <h3 className="text-white font-medium mb-4">Gap Analysis</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="bg-black border border-surface-border rounded p-4 hover:border-red-500/40 transition-all">
+                                        <span className="text-xs text-red-500 font-bold uppercase">High Priority Gap</span>
+                                        <h4 className="text-white font-medium mt-1">Best Electric SUV 2024 Comparison</h4>
+                                        <p className="text-xs text-text-secondary mt-1">electrek.co/guides/best-ev-suv-2024</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const OptimizationsPage = () => (
+            <Layout>
+                <DashboardHeader title="Optimizations" />
+                <div className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-surface-dark border border-surface-border rounded-lg p-5 col-span-2">
+                                <h2 className="text-white font-medium text-lg">Optimization Readiness</h2>
+                                <div className="flex items-end justify-between mt-4">
+                                    <span className="text-3xl font-mono font-bold text-primary">62%</span>
+                                    <span className="text-xs text-text-secondary">Overall Health</span>
+                                </div>
+                                <div className="w-full bg-surface-border rounded-full h-1.5 mt-4">
+                                    <div className="bg-primary h-full rounded-full" style={{ width: '62%' }}></div>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border rounded-lg p-5 flex flex-col justify-center items-center">
+                                <span className="material-icons text-primary text-4xl mb-2">bolt</span>
+                                <span className="text-white font-bold text-xl">4 Quick Wins</span>
+                                <span className="text-text-secondary text-xs uppercase mt-1 tracking-widest">Pending Action</span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium text-white uppercase tracking-wider border-b border-surface-border pb-2">To Do</h3>
+                                <div className="bg-surface-dark border border-surface-border rounded p-4 hover:border-primary/50 cursor-pointer">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-xs text-text-secondary">DEV-102</span>
+                                        <span className="text-xs text-primary font-bold">+8.5 IMPACT</span>
+                                    </div>
+                                    <h4 className="text-white font-medium">Update Pricing Page Schema</h4>
+                                    <div className="mt-4 flex items-center justify-between text-xs text-text-secondary">
+                                        <span>Oct 24</span>
+                                        <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px]">JD</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium text-white uppercase tracking-wider border-b border-surface-border pb-2">In Progress</h3>
+                                <div className="bg-surface-dark border border-primary/40 rounded p-4 pulse-border border-2">
+                                    <h4 className="text-white font-medium">Core Web Vitals LCP Fix</h4>
+                                    <div className="w-full bg-surface-border h-1 rounded-full mt-4">
+                                        <div className="bg-primary h-full rounded-full" style={{ width: '45%' }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium text-white uppercase tracking-wider border-b border-surface-border pb-2">Done</h3>
+                                <div className="bg-surface-dark border border-surface-border rounded p-4 opacity-60">
+                                    <h4 className="text-white font-medium line-through">Disavow Toxic Backlinks</h4>
+                                    <span className="text-xs text-emerald-500 block mt-2">Completed Oct 20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const CitationForensicsPage = () => (
+            <Layout>
+                <DashboardHeader title="Citation Forensics" />
+                <div className="flex-1 overflow-y-auto p-6">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <div className="lg:col-span-3 bg-surface-dark border border-surface-border rounded p-6 h-[320px]">
+                                <h3 className="text-white font-medium mb-6">Authority Map</h3>
+                                <div className="grid grid-cols-2 h-48 gap-2">
+                                    <div className="bg-primary/40 rounded p-4 flex flex-col justify-between">
+                                        <span className="text-white font-bold">Wikipedia</span>
+                                        <span className="text-xs text-primary">DA 98 • 243 Citations</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="bg-primary/20 rounded p-2 text-xs">CarAndDriver</div>
+                                        <div className="bg-primary/20 rounded p-2 text-xs">MotorTrend</div>
+                                        <div className="bg-primary/20 rounded p-2 text-xs">Reddit</div>
+                                        <div className="bg-primary/20 rounded p-2 text-xs">Edmunds</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-4">
+                                <div className="bg-surface-dark border border-surface-border rounded p-5 flex-1">
+                                    <span className="text-text-secondary text-xs font-bold uppercase">New Citations</span>
+                                    <div className="text-4xl font-bold text-white mt-2">+12</div>
+                                </div>
+                                <div className="bg-surface-dark border border-surface-border rounded p-5 flex-1">
+                                    <span className="text-text-secondary text-xs font-bold uppercase">Lost Citations</span>
+                                    <div className="text-4xl font-bold text-critical mt-2">-3</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border rounded overflow-hidden">
+                            <div className="p-4 border-b border-surface-border bg-black/20 font-bold text-sm">Citation Sources</div>
+                            <table className="w-full text-left text-sm">
+                                <thead className="text-xs font-mono text-text-secondary uppercase border-b border-surface-border">
+                                    <tr>
+                                        <th className="px-6 py-4">Source URL</th>
+                                        <th className="px-6 py-4">Platform</th>
+                                        <th className="px-6 py-4 text-right">Citations</th>
+                                        <th className="px-6 py-4 text-center">Auth Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[1,2,3,4].map(i => (
+                                        <tr key={i} className="border-b border-surface-border hover:bg-white/5 transition-colors">
+                                            <td className="px-6 py-4 text-primary underline truncate max-w-[200px]">en.wikipedia.org/wiki/Electric_vehicle</td>
+                                            <td className="px-6 py-4 text-slate-400">Perplexity AI</td>
+                                            <td className="px-6 py-4 text-right font-mono">243</td>
+                                            <td className="px-6 py-4 text-center">98</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const AddClientPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="bg-background-dark h-screen w-full flex items-center justify-center p-8 relative overflow-hidden">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px]"></div>
+                    <div className="relative z-10 w-full max-w-5xl h-[85vh] flex bg-surface-dark border border-surface-border rounded-2xl shadow-2xl overflow-hidden flex-col md:flex-row">
+                        <div className="w-full md:w-80 bg-[#050505] border-r border-surface-border p-8 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center gap-3 mb-10 text-white/90">
+                                    <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-900 flex items-center justify-center">
+                                        <span className="material-symbols-outlined text-[20px] text-white">radar</span>
+                                    </div>
+                                    <span className="font-bold tracking-tight text-sm uppercase">GEO Command</span>
+                                </div>
+                                <div className="space-y-8 relative">
+                                    <div className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold">1</div>
+                                        <div className="pt-1">
+                                            <p className="text-white text-sm font-semibold">Company Profile</p>
+                                            <p className="text-primary text-xs">In Progress</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 opacity-50">
+                                        <div className="w-8 h-8 rounded-full border border-surface-border flex items-center justify-center text-xs font-bold">2</div>
+                                        <div className="pt-1">
+                                            <p className="text-white text-sm font-semibold">AI Inventory</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 rounded bg-input-bg/30 border border-white/5">
+                                <p className="text-xs text-text-secondary leading-relaxed">Provide accurate details. The AI engine uses this seed data to construct the initial semantic graph.</p>
+                            </div>
+                        </div>
+                        <div className="flex-1 flex flex-col p-8 bg-surface-dark relative">
+                            <h1 className="text-2xl font-bold text-white mb-8">Add New Client</h1>
+                            <div className="max-w-xl space-y-6 flex-1 overflow-y-auto pr-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold">Company Name *</label>
+                                    <input className="w-full bg-black border border-surface-border text-white rounded h-12 px-4 focus:border-primary focus:ring-0" placeholder="e.g. Acme Corp" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold">Primary Website URL *</label>
+                                    <input className="w-full bg-black border border-surface-border text-white rounded h-12 px-4 focus:border-primary focus:ring-0" placeholder="https://" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs uppercase tracking-wider text-text-secondary font-semibold">Brand Description</label>
+                                    <textarea className="w-full bg-black border border-surface-border text-white rounded p-4 h-32 focus:border-primary focus:ring-0" placeholder="Summarize the brand voice..." />
+                                </div>
+                            </div>
+                            <div className="pt-8 flex justify-between items-center border-t border-surface-border mt-8">
+                                <button onClick={() => navigate('/clients')} className="text-sm font-medium text-text-secondary hover:text-white">Cancel</button>
+                                <button onClick={() => navigate('/activation')} className="bg-primary hover:bg-blue-600 text-white px-8 py-3 rounded font-bold shadow-lg transition-all flex items-center gap-2">
+                                    Next: Configure Tracking <span className="material-symbols-outlined">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ActivationPage = () => {
+            const navigate = useNavigate();
+            return (
+                <Layout hideSidebar>
+                    <div className="max-w-4xl mx-auto w-full px-6 py-12">
+                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-4 leading-none uppercase">
+                            FINAL REVIEW & <br/><span className="text-primary italic">ACTIVATION</span>
+                        </h2>
+                        <div className="space-y-6 mt-12">
+                            <div className="bg-surface-dark border border-surface-border p-6 rounded-xl">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-white mb-6">Company Profile</h3>
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                        <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Entity Name</p>
+                                        <p className="text-white font-medium">Global Tech Corp (GTC-AI)</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Public Domain</p>
+                                        <p className="text-primary font-mono text-sm">www.globaltech.ai</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-surface-dark border border-surface-border p-6 rounded-xl">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-white mb-6">Intelligence Engine Status</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {['ChatGPT', 'Perplexity', 'Gemini', 'Claude'].map(ai => (
+                                        <div key={ai} className="p-3 bg-black/40 border border-surface-border rounded flex flex-col items-center gap-2">
+                                            <span className="text-[10px] font-bold text-slate-500">{ai}</span>
+                                            <span className="text-green-500 text-[10px] font-bold">READY</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-16 flex items-center justify-between pt-10 border-t border-surface-border">
+                            <button onClick={() => navigate(-1)} className="text-sm font-bold text-slate-500 hover:text-white uppercase tracking-widest">Back</button>
+                            <button onClick={() => navigate('/')} className="px-10 py-4 bg-primary text-white text-sm font-black uppercase tracking-widest rounded shadow-xl hover:scale-105 transition-all">
+                                ACTIVATE GEO COMMAND
+                            </button>
+                        </div>
+                    </div>
+                </Layout>
+            );
+        };
+
+        const HallucinationsPage = () => (
+            <Layout>
+                <DashboardHeader title="Hallucination Forensic Lab" showControls={false} />
+                <div className="p-8 max-w-[1600px] mx-auto w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-surface-dark border border-surface-border p-5 rounded">
+                            <span className="text-slate-500 text-xs font-semibold uppercase block mb-2">Total Hallucinations</span>
+                            <span className="text-2xl font-bold text-white tracking-tight">124</span>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border p-5 rounded">
+                            <span className="text-slate-500 text-xs font-semibold uppercase block mb-2 text-critical">Critical Risks</span>
+                            <span className="text-2xl font-bold text-white tracking-tight">12</span>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border p-5 rounded">
+                            <span className="text-slate-500 text-xs font-semibold uppercase block mb-2 text-success">Correction Success</span>
+                            <span className="text-2xl font-bold text-white tracking-tight">89.2%</span>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border p-5 rounded">
+                            <span className="text-slate-500 text-xs font-semibold uppercase block mb-2 text-warning">Avg Resolution</span>
+                            <span className="text-2xl font-bold text-white tracking-tight">4.2h</span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-4">
+                            <div className="bg-surface-dark border border-surface-border rounded-lg overflow-hidden">
+                                <div className="p-5 border-b border-surface-border flex justify-between items-center bg-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-icons text-blue-400">smart_toy</span>
+                                        <p className="text-xs font-bold text-white">ChatGPT-4o (Search Variant)</p>
+                                    </div>
+                                    <span className="bg-critical/20 text-critical text-[10px] font-bold px-2 py-0.5 rounded border border-critical/30 uppercase">Critical</span>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    <div className="p-4 bg-black border border-critical/20 rounded text-critical/90 text-sm italic">
+                                        "The X-1 model includes integrated solar panels as a standard default feature across all trim levels."
+                                    </div>
+                                    <div className="p-4 bg-black border border-success/20 rounded text-success/90 text-sm italic">
+                                        "Solar panels are a separate modular add-on specifically for the X-1 Pro and are not included by default."
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-surface-dark border border-surface-border p-6 rounded h-fit">
+                            <h3 className="text-white text-xs font-bold uppercase mb-6">Aggregated Risk Profile</h3>
+                            <div className="flex items-center justify-center h-48">
+                                <span className="material-icons text-slate-700 text-6xl">radar</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        const SettingsPage = () => (
+            <Layout>
+                <DashboardHeader title="Client Settings" showControls={false} />
+                <div className="flex-1 flex overflow-hidden">
+                    <nav className="w-64 border-r border-surface-border bg-sidebar-bg p-4 space-y-2 shrink-0">
+                        <div className="px-3 py-2 bg-primary/10 text-primary rounded-sm text-sm font-medium flex items-center gap-2">
+                            <span className="material-icons text-sm">corporate_fare</span> General Profile
+                        </div>
+                        <div className="px-3 py-2 text-slate-400 hover:text-white transition-all text-sm font-medium flex items-center gap-2">
+                            <span className="material-icons text-sm">memory</span> AI Platforms
+                        </div>
+                    </nav>
+                    <div className="flex-1 overflow-y-auto p-8 bg-background-dark">
+                        <div className="max-w-4xl space-y-10">
+                            <section>
+                                <div className="border-b border-surface-border pb-4 mb-6 flex justify-between items-end">
+                                    <h2 className="text-2xl font-bold text-white">Company Profile</h2>
+                                    <button className="text-xs text-primary font-bold uppercase tracking-widest">Edit</button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-8">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Company Name</p>
+                                        <p className="text-white mt-1">Global Motors Inc.</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Industry</p>
+                                        <p className="text-white mt-1">Automotive & Sustainable Mobility</p>
+                                    </div>
+                                </div>
+                            </section>
+                            <section>
+                                <h3 className="text-xl font-bold text-white mb-6 border-b border-surface-border pb-4">Platform Integrations</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {['ChatGPT', 'Perplexity'].map(ai => (
+                                        <div key={ai} className="bg-sidebar-bg border border-surface-border p-4 rounded flex justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <span className="material-icons text-primary">hub</span>
+                                                <span className="text-white font-medium">{ai}</span>
+                                            </div>
+                                            <span className="text-[10px] text-green-500 font-bold uppercase">Connected</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                            <section className="pt-12">
+                                <div className="border border-red-900/30 bg-red-950/10 p-6 rounded">
+                                    <h3 className="text-red-500 font-bold">Danger Zone</h3>
+                                    <p className="text-sm text-slate-400 mt-2">Permanently delete historical GEO data.</p>
+                                    <button className="mt-4 px-6 py-2 bg-red-600/10 border border-red-600/30 text-red-500 text-xs font-bold rounded uppercase">Archive Client</button>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+
+        // --- Main App ---
+        const App = () => {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<DashboardPage />} />
+                        <Route path="/clients" element={<ClientListPage />} />
+                        <Route path="/visibility" element={<DashboardPage />} /> {/* Placeholder to visibility */}
+                        <Route path="/mentions" element={<BrandMentionsPage />} />
+                        <Route path="/competitors" element={<CompetitorsPage />} />
+                        <Route path="/optimizations" element={<OptimizationsPage />} />
+                        <Route path="/forensics" element={<CitationForensicsPage />} />
+                        <Route path="/add-client" element={<AddClientPage />} />
+                        <Route path="/activation" element={<ActivationPage />} />
+                        <Route path="/hallucinations" element={<HallucinationsPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
