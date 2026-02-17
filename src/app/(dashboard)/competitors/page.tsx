@@ -1,8 +1,10 @@
 import { Plus } from "lucide-react";
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { getCompetitorAnalysisPayload } from "@/app/(dashboard)/actions/competitor-analysis";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { CompetitiveRadar } from "@/components/competitors/competitive-radar";
+import { QueryBattleMap } from "@/components/competitors/query-battle-map";
 import { DashboardHeader } from "@/components/layout/geo-shell";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -77,7 +79,10 @@ function buildRadarPayload(client: ClientRow, competitors: CompetitorRow[]) {
 
 export default async function CompetitorsPage({ searchParams }: CompetitorsPageProps) {
   const selectedClientId = typeof searchParams?.clientId === "string" ? searchParams.clientId : null;
-  const { client, competitors } = await getCompetitorViewData(selectedClientId);
+  const [{ client, competitors }, analysisPayload] = await Promise.all([
+    getCompetitorViewData(selectedClientId),
+    getCompetitorAnalysisPayload(selectedClientId)
+  ]);
   const addCompetitorHref = selectedClientId ? `/competitors/new?clientId=${encodeURIComponent(selectedClientId)}` : "/competitors/new";
   const radarPayload = client ? buildRadarPayload(client, competitors) : null;
 
@@ -99,6 +104,57 @@ export default async function CompetitorsPage({ searchParams }: CompetitorsPageP
       ) : (
         <>
           {radarPayload ? <CompetitiveRadar data={radarPayload.data} series={radarPayload.series} /> : null}
+
+          <section className="mt-6 surface-panel p-6">
+            <h2 className="text-lg font-bold text-ink">Gap Analysis</h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Queries where competitors appear while your selected client has no coverage.
+            </p>
+
+            {analysisPayload.gapRows.length === 0 ? (
+              <p className="mt-4 text-sm text-text-secondary">No query gap was detected for this client.</p>
+            ) : (
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full min-w-[840px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-surface-border text-xs uppercase tracking-[0.12em] text-text-secondary">
+                      <th className="px-2 py-2">Query</th>
+                      <th className="px-2 py-2">Category</th>
+                      <th className="px-2 py-2">Competitor</th>
+                      <th className="px-2 py-2">Competitor Coverage</th>
+                      <th className="px-2 py-2">Client Mentions</th>
+                      <th className="px-2 py-2">Opportunity Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analysisPayload.gapRows.map((row) => (
+                      <tr className="border-b border-surface-border/60" key={`${row.query}-${row.competitorName}`}>
+                        <td className="px-2 py-3 text-ink">{row.query}</td>
+                        <td className="px-2 py-3 text-text-secondary">{row.category}</td>
+                        <td className="px-2 py-3 font-semibold text-ink">{row.competitorName}</td>
+                        <td className="px-2 py-3 text-ink">{row.competitorCoverage}%</td>
+                        <td className="px-2 py-3 text-ink">{row.clientMentions}</td>
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-28 rounded-full bg-brand-soft">
+                              <div className="h-2 rounded-full bg-brand" style={{ width: `${row.opportunityScore}%` }} />
+                            </div>
+                            <span className="font-semibold text-ink">{row.opportunityScore}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="mt-6 surface-panel p-6">
+            <h2 className="text-lg font-bold text-ink">Query Battle Map</h2>
+            <p className="mt-1 text-sm text-text-secondary">Brand-by-query visibility matrix with category filter.</p>
+            <QueryBattleMap brands={analysisPayload.brands} rows={analysisPayload.battleRows} />
+          </section>
 
           <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {competitors.length === 0 ? (
