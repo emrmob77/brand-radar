@@ -1,5 +1,26 @@
+import { cookies } from "next/headers";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { AppShell } from "@/components/layout/geo-shell";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+async function getDashboardClients() {
+  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+
+  if (!accessToken) {
+    return [];
+  }
+
+  const supabase = createServerSupabaseClient(accessToken);
+  const { data, error } = await supabase.from("clients").select("id,name,domain").order("name", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data;
+}
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const clients = await getDashboardClients();
+  return <AppShell clients={clients}>{children}</AppShell>;
 }

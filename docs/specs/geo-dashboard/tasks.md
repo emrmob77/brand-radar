@@ -38,13 +38,13 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Foreign key ilişkilerini ve cascade delete'leri ayarla
     - _Gereksinimler: 11.4, 1.5, 1.6_
   
-  - [ ] 2.2 Row Level Security (RLS) politikalarını uygula
+  - [x] 2.2 Row Level Security (RLS) politikalarını uygula
     - Çok kiracılı veri izolasyonu için RLS politikaları oluştur
     - Kullanıcıların yalnızca kendi ajanslarının verilerine erişebilmesini sağla
     - Farklı kullanıcı rolleriyle RLS politikalarını test et
     - _Gereksinimler: 11.5, 11.6, 10.6_
   
-  - [ ] 2.3 Supabase kimlik doğrulamasını ayarla
+  - [x] 2.3 Supabase kimlik doğrulamasını ayarla
     - Supabase Auth'u email/password ile yapılandır
     - Korumalı rotalar için kimlik doğrulama middleware'i oluştur
     - Oturum yönetimi ve token yenilemeyi uygula
@@ -56,34 +56,34 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 3.1_
 
 - [ ] 3. Kimlik doğrulama sayfaları ve düzen
-  - [ ] 3.1 Giriş sayfası oluştur
+  - [x] 3.1 Giriş sayfası oluştur
     - Email/password alanlarıyla giriş formu oluştur
     - React Hook Form + Zod kullanarak form doğrulaması uygula
     - Supabase kimlik doğrulama mantığını ekle
     - Kimlik doğrulama hatalarını işle ve mesajları göster
     - _Gereksinimler: 11.1_
   
-  - [ ] 3.2 Kimlik doğrulama düzeni oluştur
+  - [x] 3.2 Kimlik doğrulama düzeni oluştur
     - Kimlik doğrulama sayfaları için merkezli düzen oluştur
     - White-label logo desteği ekle
     - Tailwind CSS ile stillendir
     - _Gereksinimler: 13.3_
 
 - [ ] 4. Dashboard düzeni ve navigasyon
-  - [ ] 4.1 Kenar çubuğuyla dashboard düzeni oluştur
+  - [x] 4.1 Kenar çubuğuyla dashboard düzeni oluştur
     - Navigasyon linkleriyle responsive kenar çubuğu oluştur
     - Mobil için daraltılabilir kenar çubuğu uygula
     - Aktif durum vurgulaması ekle
     - _Gereksinimler: 2.1_
   
-  - [ ] 4.2 Başlık bileşeni oluştur
+  - [x] 4.2 Başlık bileşeni oluştur
     - Müşteri seçici dropdown'ı ile başlık oluştur
     - Arama çubuğu placeholder'ı ekle
     - Bildirim zili ikonu uygula
     - Çıkış yapma ile kullanıcı avatar menüsü ekle
     - _Gereksinimler: 1.1, 1.4, 9.5_
   
-  - [ ] 4.3 Müşteri seçici işlevselliğini uygula
+  - [x] 4.3 Müşteri seçici işlevselliğini uygula
     - Supabase'den müşteri listesini getir
     - Müşteri araması ile dropdown bileşeni oluştur
     - Seçili müşteriyi URL parametrelerinde veya state'te sakla
@@ -91,48 +91,48 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 1.4_
 
 - [ ] 5. Müşteri yönetimi
-  - [ ] 5.1 Müşteri listesi sayfası oluştur
+  - [x] 5.1 Müşteri listesi sayfası oluştur
     - Sağlık göstergeleriyle tüm müşterileri getir ve göster
     - Logo, isim, sektör ve sağlık skoru ile müşteri kartları göster
     - "Yeni Müşteri" butonu ekle
     - Müşteri arama ve filtreleme uygula
     - _Gereksinimler: 1.1_
   
-  - [ ] 5.2 Yeni müşteri formu oluştur
+  - [x] 5.2 Yeni müşteri formu oluştur
     - İsim, domain, logo yükleme, sektör ve platformlar alanlarıyla form oluştur
     - Form doğrulaması uygula
     - Supabase Storage'a logo yükleme ekle
     - Müşteri oluşturma için Server Action oluştur
     - _Gereksinimler: 1.2, 1.3, 1.5_
   
-  - [ ] 5.3 Müşteri silme işlemini uygula
+  - [x] 5.3 Müşteri silme işlemini uygula
     - Onay diyaloguyla silme butonu ekle
     - Cascade delete için Server Action oluştur
     - Optimistic UI güncellemelerini işle
     - _Gereksinimler: 1.6_
 
 - [ ] 6. Dashboard metrikleri ve genel bakış
-  - [ ] 6.1 MetricCard bileşeni oluştur
+  - [x] 6.1 MetricCard bileşeni oluştur
     - Başlık, değer ve değişim göstergesiyle yeniden kullanılabilir metrik kartı oluştur
     - Framer Motion kullanarak animasyonlu sayı geçişleri ekle
     - Opsiyonel sparkline grafiği uygula
     - Tailwind CSS ile stillendir
     - _Gereksinimler: 2.1, 2.4_
   
-  - [ ] 6.2 Dashboard metrik hesaplamasını uygula
+  - [x] 6.2 Dashboard metrik hesaplamasını uygula
     - AI_SoV, Toplam Alıntılar, Duygu Skoru ve Tahmini Trafik Değerini getirmek ve hesaplamak için Server Action oluştur
     - Metrik hesaplama fonksiyonlarını uygula (AI SoV, duygu toplama, sağlık skoru, trafik değeri)
     - Önceki dönemle karşılaştırma ekle
     - _Gereksinimler: 2.1, 2.4_
   
-  - [ ] 6.3 Görünürlük Trendleri grafiği oluştur
+  - [x] 6.3 Görünürlük Trendleri grafiği oluştur
     - Recharts kullanarak çok çizgili grafik oluştur
     - Son 30 günün trend verilerini getir
     - Platform geçiş filtrelerini ekle
     - Responsive tasarım uygula
     - _Gereksinimler: 2.2_
   
-  - [ ] 6.4 Canlı Bahsetmeler akışı oluştur
+  - [x] 6.4 Canlı Bahsetmeler akışı oluştur
     - Gerçek zamanlı akış bileşeni oluştur
     - Yeni bahsetmeler için Supabase gerçek zamanlı aboneliği ayarla
     - Platform ikonu, duygu rozeti ve zaman damgasıyla bahsetme kartları göster
@@ -140,65 +140,65 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 2.3, 2.6_
 
 - [ ] 7. AI Platform Görünürlük Takibi
-  - [ ] 7.1 AI Görünürlük sayfası oluştur
+  - [x] 7.1 AI Görünürlük sayfası oluştur
     - Platform görünürlük kartlarıyla sayfa düzeni oluştur
     - Platform başına görünürlük verilerini getir
     - Her platform için görünürlük yüzdesini göster
     - _Gereksinimler: 3.2_
   
-  - [ ] 7.2 Platform x konu ısı haritası oluştur
+  - [x] 7.2 Platform x konu ısı haritası oluştur
     - Özel SVG veya Recharts kullanarak HeatMap bileşeni oluştur
     - Konu kategorilerini ve platform verilerini getir
     - Görünürlüğe göre renk gradyanı uygula
     - Hover tooltip'leri ekle
     - _Gereksinimler: 3.3_
   
-  - [ ] 7.3 Share of Voice karşılaştırması uygula
+  - [x] 7.3 Share of Voice karşılaştırması uygula
     - Platformları karşılaştıran çubuk grafik oluştur
     - SoV yüzdelerini hesapla ve göster
     - En iyi platformlar için görsel vurgulama ekle
     - _Gereksinimler: 3.4_
 
 - [ ] 8. Marka Bahsetmeleri ve Duygu Analizi
-  - [ ] 8.1 Marka Bahsetmeleri sayfası oluştur
+  - [x] 8.1 Marka Bahsetmeleri sayfası oluştur
     - Duygu dağılımıyla sayfa düzeni oluştur
     - Toplam bahsetme sayısını ve duygu dağılımını göster
     - Duygu dağılımı için pasta grafiği göster
     - _Gereksinimler: 4.2_
   
-  - [ ] 8.2 Bahsetmeler veri tablosu oluştur
+  - [x] 8.2 Bahsetmeler veri tablosu oluştur
     - Sıralanabilir sütunlarla DataTable bileşeni oluştur
     - Bahsetme içeriği, platform, zaman damgası, duygu ve sorguyu göster
     - Sayfalama uygula
     - Platform ve duyguya göre filtreleme ekle
     - _Gereksinimler: 4.4, 18.2, 18.3_
   
-  - [ ] 8.3 SentimentGauge bileşeni oluştur
+  - [x] 8.3 SentimentGauge bileşeni oluştur
     - Dairesel gösterge görselleştirmesi oluştur
     - Kırmızıdan yeşile renk gradyanı uygula
     - Duygu skoruna göre animasyonlu ibre ekle
     - _Gereksinimler: 4.5_
   
-  - [ ] 8.4 Gerçek zamanlı bahsetme güncellemelerini uygula
+  - [x] 8.4 Gerçek zamanlı bahsetme güncellemelerini uygula
     - Mentions tablosu için Supabase gerçek zamanlı aboneliği ayarla
     - Yeni bahsetmeler geldiğinde UI'ı güncelle
     - Yeni bahsetmeler için bildirim ekle
     - _Gereksinimler: 4.3_
 
 - [ ] 9. Rakip Analizi
-  - [ ] 9.1 Rakip Analizi sayfası oluştur
+  - [x] 9.1 Rakip Analizi sayfası oluştur
     - Rakip listesiyle sayfa düzeni oluştur
     - "Rakip Ekle" butonu ekle
     - Metriklerle rakip kartları göster
     - _Gereksinimler: 5.1_
   
-  - [ ] 9.2 Rakip ekleme formu oluştur
+  - [x] 9.2 Rakip ekleme formu oluştur
     - Rakip adı ve domain alanlarıyla form oluştur
     - Doğrulama uygula (müşteri başına maksimum 10 rakip)
     - Rakip oluşturma için Server Action oluştur
     - _Gereksinimler: 5.1, 5.2_
   
-  - [ ] 9.3 Rekabetçi manzara radar grafiği oluştur
+  - [x] 9.3 Rekabetçi manzara radar grafiği oluştur
     - Recharts kullanarak RadarChart bileşeni oluştur
     - Müşteri ve rakip metriklerini getir
     - Birden fazla seri göster (müşteri + rakipler)
@@ -541,6 +541,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
 - [ ] 22. Onboarding ve Yardım
   - [ ] 22.1 Onboarding sihirbazı oluştur
     - İlk kez kullanan kullanıcılar için çok adımlı sihirbaz oluştur
+    - Register sonrası ajans ve kullanıcı profilinin ilk kurulum adımlarını onboarding akışına dahil et
     - Müşteri ekleme, platform yapılandırma ve ilk sorgu ekleme adımlarını dahil et
     - İlerleme göstergesi ekle
     - _Gereksinimler: 19.1, 19.2_

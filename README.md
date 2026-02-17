@@ -18,3 +18,8 @@ Gerekli degiskenler:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+Opsiyonel white-label degiskenleri:
+
+- `NEXT_PUBLIC_BRAND_NAME`
+- `NEXT_PUBLIC_BRAND_LOGO_URL`

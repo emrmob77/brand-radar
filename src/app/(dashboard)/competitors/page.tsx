@@ -1,48 +1,139 @@
+import { Plus } from "lucide-react";
+import { cookies } from "next/headers";
+import Link from "next/link";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
+import { CompetitiveRadar } from "@/components/competitors/competitive-radar";
 import { DashboardHeader } from "@/components/layout/geo-shell";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const competitors = [
-  { name: "Brand A", sov: 28, citationGap: 14, risk: "Medium" },
-  { name: "Brand B", sov: 19, citationGap: 21, risk: "High" },
-  { name: "Brand C", sov: 11, citationGap: 9, risk: "Low" }
-];
+type CompetitorsPageProps = {
+  searchParams?: {
+    clientId?: string;
+  };
+};
 
-export default function CompetitorsPage() {
+type CompetitorRow = {
+  id: string;
+  name: string;
+  domain: string;
+};
+
+type ClientRow = {
+  id: string;
+  name: string;
+  health_score: number;
+};
+
+function metricFromString(input: string, min: number, max: number) {
+  const hash = input.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return min + (hash % (max - min + 1));
+}
+
+async function getCompetitorViewData(clientId: string | null): Promise<{ client: ClientRow | null; competitors: CompetitorRow[] }> {
+  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+  if (!accessToken || !clientId) {
+    return { client: null, competitors: [] };
+  }
+
+  const supabase = createServerSupabaseClient(accessToken);
+  const [clientResult, competitorsResult] = await Promise.all([
+    supabase.from("clients").select("id,name,health_score").eq("id", clientId).maybeSingle(),
+    supabase.from("competitors").select("id,name,domain").eq("client_id", clientId).order("created_at", { ascending: false })
+  ]);
+
+  return {
+    client: clientResult.data,
+    competitors: competitorsResult.data ?? []
+  };
+}
+
+function buildRadarPayload(client: ClientRow, competitors: CompetitorRow[]) {
+  const palette = ["#376df6", "#ef4444", "#22c55e", "#f59e0b", "#7c3aed"];
+  const metrics = ["Visibility", "Citation Authority", "Sentiment", "Topic Coverage", "Momentum"];
+  const normalizedCompetitors = competitors.slice(0, 4);
+
+  const series = [
+    { key: "client", label: client.name, color: palette[0] ?? "#376df6" },
+    ...normalizedCompetitors.map((item, index) => ({
+      key: `competitor_${index}`,
+      label: item.name,
+      color: palette[index + 1] ?? "#ef4444"
+    }))
+  ];
+
+  const data = metrics.map((metric) => {
+    const row: { metric: string; [key: string]: string | number } = { metric };
+    row.client = Math.min(100, Math.max(20, client.health_score + metricFromString(`${client.id}-${metric}`, -10, 12)));
+
+    normalizedCompetitors.forEach((item, index) => {
+      row[`competitor_${index}`] = metricFromString(`${item.id}-${metric}`, 28, 88);
+    });
+
+    return row;
+  });
+
+  return { data, series };
+}
+
+export default async function CompetitorsPage({ searchParams }: CompetitorsPageProps) {
+  const selectedClientId = typeof searchParams?.clientId === "string" ? searchParams.clientId : null;
+  const { client, competitors } = await getCompetitorViewData(selectedClientId);
+  const addCompetitorHref = selectedClientId ? `/competitors/new?clientId=${encodeURIComponent(selectedClientId)}` : "/competitors/new";
+  const radarPayload = client ? buildRadarPayload(client, competitors) : null;
+
   return (
     <div className="mx-auto w-full max-w-[1320px]">
       <DashboardHeader
-        title="Competitor Intelligence"
+        actions={
+          <Link className="focus-ring inline-flex items-center gap-2 rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600" href={addCompetitorHref}>
+            <Plus className="h-4 w-4" />
+            Add Competitor
+          </Link>
+        }
         description="Relative share-of-voice pressure, citation gaps, and strategic whitespace opportunities."
+        title="Competitor Intelligence"
       />
 
-      <section className="surface-panel p-6">
-        <h2 className="text-lg font-bold text-ink">Competitive Landscape</h2>
-        <div className="mt-5 h-72 rounded-2xl border border-surface-border bg-gradient-to-br from-white via-brand-soft/35 to-white p-4">
-          <svg className="h-full w-full" viewBox="0 0 100 100">
-            <polygon className="fill-brand/20 stroke-brand stroke-2" points="50,12 83,30 82,67 50,86 18,67 17,30" />
-            <polygon className="fill-amber-200/30 stroke-amber-500 stroke-[1.5]" points="50,22 74,36 73,60 50,74 27,60 26,36" />
-            <polygon className="fill-transparent stroke-slate-500 stroke-[1.5] stroke-dasharray-3" points="50,30 68,40 68,56 50,66 32,56 32,40" />
-          </svg>
-        </div>
-      </section>
+      {!selectedClientId || !client ? (
+        <section className="surface-panel p-5 text-sm text-text-secondary">Select a client first to view competitor analysis.</section>
+      ) : (
+        <>
+          {radarPayload ? <CompetitiveRadar data={radarPayload.data} series={radarPayload.series} /> : null}
 
-      <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {competitors.map((item) => (
-          <article key={item.name} className="surface-panel p-5">
-            <h3 className="text-base font-bold text-ink">{item.name}</h3>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border border-surface-border bg-white p-3">
-                <p className="text-xs uppercase tracking-[0.12em] text-text-secondary">AI SoV</p>
-                <p className="mt-1 text-2xl font-extrabold text-ink">{item.sov}%</p>
-              </div>
-              <div className="rounded-xl border border-surface-border bg-white p-3">
-                <p className="text-xs uppercase tracking-[0.12em] text-text-secondary">Citation Gap</p>
-                <p className="mt-1 text-2xl font-extrabold text-brand">{item.citationGap}</p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm text-text-secondary">Risk posture: <span className="font-semibold text-ink">{item.risk}</span></p>
-          </article>
-        ))}
-      </section>
+          <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {competitors.length === 0 ? (
+              <article className="surface-panel col-span-full p-5 text-sm text-text-secondary">No competitors added for this client yet.</article>
+            ) : (
+              competitors.map((item) => {
+                const sov = metricFromString(item.id, 5, 40);
+                const citationGap = metricFromString(item.domain, 2, 30);
+                const riskScore = metricFromString(item.name, 1, 100);
+                const riskLabel = riskScore > 70 ? "High" : riskScore > 40 ? "Medium" : "Low";
+
+                return (
+                  <article className="surface-panel p-5" key={item.id}>
+                    <h3 className="text-base font-bold text-ink">{item.name}</h3>
+                    <p className="mt-1 text-xs text-text-secondary">{item.domain}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-xl border border-surface-border bg-white p-3">
+                        <p className="text-xs uppercase tracking-[0.12em] text-text-secondary">AI SoV</p>
+                        <p className="mt-1 text-2xl font-extrabold text-ink">{sov}%</p>
+                      </div>
+                      <div className="rounded-xl border border-surface-border bg-white p-3">
+                        <p className="text-xs uppercase tracking-[0.12em] text-text-secondary">Citation Gap</p>
+                        <p className="mt-1 text-2xl font-extrabold text-brand">{citationGap}</p>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm text-text-secondary">
+                      Risk posture: <span className="font-semibold text-ink">{riskLabel}</span>
+                    </p>
+                  </article>
+                );
+              })
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

@@ -10,16 +10,18 @@ import {
   FileSearch,
   Gauge,
   LayoutDashboard,
+  LogOut,
   Menu,
   Search,
   Settings,
   Sparkles,
+  UserCircle2,
   Users,
   X
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +39,16 @@ const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
 
 const allNavigation: NavItem[] = [...mainNavigation, ...systemNavigation];
 
+export type ClientSummary = {
+  id: string;
+  name: string;
+  domain?: string | null;
+};
+
 type AppShellProps = {
   children: React.ReactNode;
   hideSidebar?: boolean;
+  clients?: ClientSummary[];
 };
 
 type DashboardHeaderProps = {
@@ -52,9 +61,10 @@ type NavigationGroupProps = {
   title: string;
   items: NavItem[];
   pathname: string;
+  selectedClientId: string | null;
 };
 
-function NavigationGroup({ title, items, pathname }: NavigationGroupProps) {
+function NavigationGroup({ title, items, pathname, selectedClientId }: NavigationGroupProps) {
   return (
     <section>
       <p className="px-1.5 text-[9px] font-mono uppercase tracking-[0.18em] text-text-secondary md:text-center xl:text-left">
@@ -64,6 +74,7 @@ function NavigationGroup({ title, items, pathname }: NavigationGroupProps) {
         {items.map((item) => {
           const Icon = iconMap[item.icon];
           const active = pathname === item.href;
+          const href = selectedClientId ? `${item.href}?clientId=${encodeURIComponent(selectedClientId)}` : item.href;
 
           return (
             <li key={item.href}>
@@ -74,7 +85,7 @@ function NavigationGroup({ title, items, pathname }: NavigationGroupProps) {
                     ? "border-brand/25 bg-brand text-white shadow-[0_8px_20px_rgba(17,19,24,0.22)]"
                     : "border-transparent bg-white/40 text-text-secondary hover:border-surface-border hover:bg-white hover:text-ink"
                 )}
-                href={item.href}
+                href={href}
                 title={item.label}
               >
                 <span className={cn("grid h-6 w-6 place-items-center rounded-md", active ? "bg-white/12" : "bg-brand-soft")}>
@@ -103,7 +114,7 @@ function NavigationGroup({ title, items, pathname }: NavigationGroupProps) {
   );
 }
 
-function SidebarContent({ pathname }: { pathname: string }) {
+function SidebarContent({ pathname, selectedClientId }: { pathname: string; selectedClientId: string | null }) {
   return (
     <div className="flex min-h-full flex-col bg-sidebar-bg">
       <div className="border-b border-surface-border px-4 py-4">
@@ -124,9 +135,9 @@ function SidebarContent({ pathname }: { pathname: string }) {
       </div>
 
       <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
-        <NavigationGroup items={mainNavigation} pathname={pathname} title="Workspace" />
+        <NavigationGroup items={mainNavigation} pathname={pathname} selectedClientId={selectedClientId} title="Workspace" />
         <div className="mt-5">
-          <NavigationGroup items={systemNavigation} pathname={pathname} title="System" />
+          <NavigationGroup items={systemNavigation} pathname={pathname} selectedClientId={selectedClientId} title="System" />
         </div>
       </nav>
 
@@ -142,6 +153,15 @@ function SidebarContent({ pathname }: { pathname: string }) {
               <Bell className="h-3.5 w-3.5" />
             </button>
           </div>
+          <form action="/auth/sign-out" className="mt-2 md:hidden xl:block" method="post">
+            <button
+              className="focus-ring inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-surface-border px-2.5 py-1.5 text-[11px] font-semibold text-text-secondary hover:bg-brand-soft hover:text-ink"
+              type="submit"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </button>
+          </form>
         </div>
 
         <div className="mt-2.5 rounded-xl border border-surface-border bg-white px-2.5 py-2 md:hidden xl:block">
@@ -159,12 +179,72 @@ function SidebarContent({ pathname }: { pathname: string }) {
   );
 }
 
-export function AppShell({ children, hideSidebar = false }: AppShellProps) {
+export function AppShell({ children, hideSidebar = false, clients = [] }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientMenuRef = useRef<HTMLDivElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [clientMenuOpen, setClientMenuOpen] = useState(false);
+  const [clientQuery, setClientQuery] = useState("");
 
   const shouldShowSidebar = useMemo(() => !hideSidebar, [hideSidebar]);
   const activeItem = useMemo(() => allNavigation.find((item) => pathname === item.href), [pathname]);
+  const availableClients = clients;
+  const selectedClientId = searchParams.get("clientId");
+  const selectedClient = useMemo(
+    () => availableClients.find((client) => client.id === selectedClientId) ?? availableClients[0] ?? null,
+    [availableClients, selectedClientId]
+  );
+  const filteredClients = useMemo(() => {
+    const query = clientQuery.trim().toLowerCase();
+    if (!query) {
+      return availableClients;
+    }
+
+    return availableClients.filter((client) => {
+      return client.name.toLowerCase().includes(query) || client.domain?.toLowerCase().includes(query);
+    });
+  }, [availableClients, clientQuery]);
+  const profileHref = selectedClient?.id ? `/settings/profile?clientId=${encodeURIComponent(selectedClient.id)}` : "/settings/profile";
+
+  useEffect(() => {
+    if (!shouldShowSidebar || availableClients.length === 0) {
+      return;
+    }
+
+    const isClientInList = availableClients.some((client) => client.id === selectedClientId);
+    if (selectedClientId && isClientInList) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("clientId", availableClients[0]?.id ?? "");
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [availableClients, pathname, router, searchParams, selectedClientId, shouldShowSidebar]);
+
+  useEffect(() => {
+    if (!clientMenuOpen) {
+      return;
+    }
+
+    function handleOutsideClick(event: MouseEvent) {
+      if (!clientMenuRef.current?.contains(event.target as Node)) {
+        setClientMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, [clientMenuOpen]);
+
+  function selectClient(clientId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("clientId", clientId);
+    router.push(`${pathname}?${params.toString()}`);
+    setClientMenuOpen(false);
+    setClientQuery("");
+  }
 
   return (
     <div className="app-shell-bg flex min-h-screen bg-background-dark">
@@ -189,7 +269,7 @@ export function AppShell({ children, hideSidebar = false }: AppShellProps) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <SidebarContent pathname={pathname} />
+            <SidebarContent pathname={pathname} selectedClientId={selectedClient?.id ?? null} />
           </aside>
         </>
       )}
@@ -212,6 +292,60 @@ export function AppShell({ children, hideSidebar = false }: AppShellProps) {
                 <p className="mt-0.5 text-sm font-semibold text-ink">{activeItem?.label ?? "Dashboard"}</p>
               </div>
 
+              <div className="relative hidden lg:block" ref={clientMenuRef}>
+                <button
+                  className="focus-ring inline-flex min-w-[210px] items-center justify-between gap-2 rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft"
+                  onClick={() => setClientMenuOpen((prev) => !prev)}
+                  type="button"
+                >
+                  <span className="truncate">{selectedClient?.name ?? "Select Client"}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-text-secondary" />
+                </button>
+
+                {clientMenuOpen ? (
+                  <div className="absolute left-0 z-30 mt-2 w-[300px] rounded-xl border border-surface-border bg-white p-2 shadow-[0_14px_26px_rgba(17,19,24,0.12)]">
+                    <label className="sr-only" htmlFor="client-selector-search">
+                      Search clients
+                    </label>
+                    <div className="flex items-center gap-2 rounded-lg border border-surface-border px-2.5 py-2">
+                      <Search className="h-3.5 w-3.5 text-text-secondary" />
+                      <input
+                        className="w-full bg-transparent text-xs text-ink placeholder:text-text-secondary focus:outline-none"
+                        id="client-selector-search"
+                        onChange={(event) => setClientQuery(event.target.value)}
+                        placeholder="Search client by name or domain"
+                        type="text"
+                        value={clientQuery}
+                      />
+                    </div>
+                    <div className="mt-2 max-h-56 overflow-y-auto">
+                      {filteredClients.length === 0 ? (
+                        <p className="px-2.5 py-2 text-xs text-text-secondary">No matching client found.</p>
+                      ) : (
+                        filteredClients.map((client) => {
+                          const active = client.id === selectedClient?.id;
+
+                          return (
+                            <button
+                              className={cn(
+                                "mt-1 block w-full rounded-lg px-2.5 py-2 text-left",
+                                active ? "bg-brand-soft" : "hover:bg-brand-soft/70"
+                              )}
+                              key={client.id}
+                              onClick={() => selectClient(client.id)}
+                              type="button"
+                            >
+                              <p className="truncate text-xs font-semibold text-ink">{client.name}</p>
+                              <p className="truncate text-[11px] text-text-secondary">{client.domain ?? "No domain"}</p>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
               <div className="hidden items-center gap-2 rounded-xl border border-surface-border bg-white px-3 py-2 lg:flex">
                 <Search className="h-4 w-4 text-text-secondary" />
                 <label className="sr-only" htmlFor="global-search">
@@ -227,14 +361,41 @@ export function AppShell({ children, hideSidebar = false }: AppShellProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <button aria-label="Notifications" className="focus-ring relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-surface-border bg-white text-text-secondary hover:text-ink" type="button">
+                <Bell className="h-4 w-4" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-critical" />
+              </button>
               <button className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft" type="button">
                 <CalendarRange className="h-3.5 w-3.5 text-text-secondary" />
                 This Month
                 <ChevronDown className="h-3.5 w-3.5 text-text-secondary" />
               </button>
-              <button className="focus-ring rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600" type="button">
-                Export
-              </button>
+              <details className="group relative">
+                <summary className="focus-ring inline-flex list-none items-center gap-2 rounded-xl border border-surface-border bg-white px-2.5 py-2 text-xs font-semibold text-ink hover:bg-brand-soft">
+                  <span className="grid h-6 w-6 place-items-center rounded-lg bg-brand-soft text-[11px] font-bold text-ink">EA</span>
+                  <span className="hidden sm:inline">Emrah A.</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-text-secondary" />
+                </summary>
+                <div className="absolute right-0 z-30 mt-2 w-52 rounded-xl border border-surface-border bg-white p-2 shadow-[0_14px_26px_rgba(17,19,24,0.12)]">
+                  <div className="rounded-lg border border-surface-border bg-brand-soft px-2.5 py-2">
+                    <p className="text-[11px] font-semibold text-ink">Emrah A.</p>
+                    <p className="text-[10px] text-text-secondary">admin@brandradar.ai</p>
+                  </div>
+                  <Link className="mt-2 inline-flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-ink hover:bg-brand-soft" href={profileHref}>
+                    <UserCircle2 className="h-3.5 w-3.5 text-text-secondary" />
+                    Profile
+                  </Link>
+                  <form action="/auth/sign-out" method="post">
+                    <button
+                      className="inline-flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-critical hover:bg-critical/10"
+                      type="submit"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </details>
             </div>
           </header>
         )}

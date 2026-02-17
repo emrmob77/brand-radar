@@ -1,40 +1,14 @@
-import { ArrowDownRight, ArrowUpRight, Building2, Sparkles, TrendingUp, TriangleAlert } from "lucide-react";
+import { Building2, Sparkles, TrendingUp, TriangleAlert } from "lucide-react";
+import { cookies } from "next/headers";
+import { getDashboardMetricCards } from "@/app/(dashboard)/actions/metrics";
+import { getVisibilityTrendPayload } from "@/app/(dashboard)/actions/visibility-trend";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
+import { LiveMentionsFeed } from "@/components/dashboard/live-mentions-feed";
+import type { MentionRow } from "@/components/dashboard/live-mentions-feed";
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { VisibilityTrend } from "@/components/dashboard/visibility-trend";
 import { DashboardHeader } from "@/components/layout/geo-shell";
-
-const kpis = [
-  {
-    label: "AI Share of Voice",
-    value: "32.4%",
-    delta: "+4.8%",
-    positive: true,
-    description: "vs previous month",
-    progress: 78
-  },
-  {
-    label: "Qualified Citations",
-    value: "1,842",
-    delta: "+126",
-    positive: true,
-    description: "high-authority sources",
-    progress: 84
-  },
-  {
-    label: "Sentiment Health",
-    value: "81 / 100",
-    delta: "-2.1",
-    positive: false,
-    description: "needs attention",
-    progress: 62
-  },
-  {
-    label: "Est. Traffic Value",
-    value: "$68,300",
-    delta: "+12.2%",
-    positive: true,
-    description: "pipeline contribution",
-    progress: 74
-  }
-];
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const mentions = [
   {
@@ -57,77 +31,84 @@ const mentions = [
   }
 ];
 
-const trendData = [
-  { label: "Jan 06", visibility: 47, benchmark: 44 },
-  { label: "Jan 09", visibility: 49, benchmark: 45 },
-  { label: "Jan 12", visibility: 48, benchmark: 45 },
-  { label: "Jan 15", visibility: 52, benchmark: 46 },
-  { label: "Jan 18", visibility: 55, benchmark: 47 },
-  { label: "Jan 21", visibility: 57, benchmark: 48 },
-  { label: "Jan 24", visibility: 56, benchmark: 49 },
-  { label: "Jan 27", visibility: 60, benchmark: 50 },
-  { label: "Jan 30", visibility: 63, benchmark: 52 },
-  { label: "Feb 02", visibility: 66, benchmark: 54 },
-  { label: "Feb 05", visibility: 68, benchmark: 55 },
-  { label: "Feb 08", visibility: 71, benchmark: 57 }
-];
+async function getInitialMentions(clientId: string | null) {
+  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+  if (!accessToken) {
+    return {
+      accessToken: null,
+      rows: []
+    };
+  }
 
-const chartWidth = 720;
-const chartHeight = 286;
-const chartPadding = {
-  top: 18,
-  right: 24,
-  bottom: 46,
-  left: 48
+  const supabase = createServerSupabaseClient(accessToken);
+  const baseQuery = supabase
+    .from("mentions")
+    .select("id,query,content,sentiment,detected_at,platforms(name)")
+    .order("detected_at", { ascending: false })
+    .limit(20);
+  const { data } = clientId ? await baseQuery.eq("client_id", clientId) : await baseQuery;
+
+  const rows: MentionRow[] = (data ?? []).map((item) => {
+    const platformRelation = Array.isArray(item.platforms) ? item.platforms[0] : item.platforms;
+
+    return {
+      id: String(item.id),
+      platform: platformRelation?.name ?? "Unknown",
+      sentiment: (item.sentiment as "positive" | "neutral" | "negative") ?? "neutral",
+      query: item.query,
+      excerpt: item.content,
+      detectedAt: item.detected_at
+    };
+  });
+
+  if (rows.length === 0) {
+    return {
+      accessToken,
+      rows: mentions.map((item, index): MentionRow => ({
+        id: `mock-${index}`,
+        platform: item.platform,
+        sentiment: item.platform === "Claude" ? "negative" : "neutral",
+        query: item.title,
+        excerpt: item.title,
+        detectedAt: new Date().toISOString()
+      }))
+    };
+  }
+
+  return {
+    accessToken,
+    rows
+  };
+}
+
+type DashboardPageProps = {
+  searchParams?: {
+    clientId?: string;
+  };
 };
 
-const visibleMin = 42;
-const visibleMax = 74;
-const yTicks = [44, 50, 56, 62, 68, 74];
-const xTickIndexes = [0, 2, 4, 6, 8, 10, 11];
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const selectedClientId = typeof searchParams?.clientId === "string" ? searchParams.clientId : null;
+  const [kpis, trendPayload, initialMentions] = await Promise.all([
+    getDashboardMetricCards(selectedClientId),
+    getVisibilityTrendPayload(selectedClientId),
+    getInitialMentions(selectedClientId)
+  ]);
 
-const innerWidth = chartWidth - chartPadding.left - chartPadding.right;
-const innerHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+  const totalForPoint = (point?: (typeof trendPayload.data)[number]) =>
+    trendPayload.platforms.reduce((sum, platform) => sum + Number(point?.[platform.slug] ?? 0), 0);
 
-function getX(index: number, total: number) {
-  if (total <= 1) return chartPadding.left;
-
-  return chartPadding.left + (index / (total - 1)) * innerWidth;
-}
-
-function getY(value: number) {
-  const ratio = (value - visibleMin) / (visibleMax - visibleMin);
-  return chartPadding.top + (1 - ratio) * innerHeight;
-}
-
-function getPolylinePoints(values: number[]) {
-  const total = values.length;
-  return values.map((value, index) => `${getX(index, total)},${getY(value)}`).join(" ");
-}
-
-function getAreaPath(values: number[]) {
-  const total = values.length;
-
-  if (!total) return "";
-
-  const linePath = values
-    .map((value, index) => `${index === 0 ? "M" : "L"} ${getX(index, total)} ${getY(value)}`)
-    .join(" ");
-  const lastX = getX(total - 1, total);
-  const firstX = getX(0, total);
-  const baselineY = chartHeight - chartPadding.bottom;
-
-  return `${linePath} L ${lastX} ${baselineY} L ${firstX} ${baselineY} Z`;
-}
-
-export default function DashboardPage() {
-  const visibilitySeries = trendData.map((point) => point.visibility);
-  const benchmarkSeries = trendData.map((point) => point.benchmark);
-  const latestPoint = trendData[trendData.length - 1];
-  const previousPoint = trendData[trendData.length - 2];
-  const visibilityDelta = latestPoint.visibility - trendData[0].visibility;
-  const acceleration = latestPoint.visibility - previousPoint.visibility;
-  const benchmarkGap = latestPoint.visibility - latestPoint.benchmark;
+  const firstTrendPoint = trendPayload.data[0];
+  const latestTrendPoint = trendPayload.data[trendPayload.data.length - 1];
+  const previousTrendPoint = trendPayload.data[trendPayload.data.length - 2];
+  const visibilityDelta = totalForPoint(latestTrendPoint) - totalForPoint(firstTrendPoint);
+  const acceleration = totalForPoint(latestTrendPoint) - totalForPoint(previousTrendPoint);
+  const lastSeven = trendPayload.data.slice(-7);
+  const trailingAverage =
+    lastSeven.length > 0
+      ? lastSeven.reduce((sum, point) => sum + totalForPoint(point), 0) / lastSeven.length
+      : 0;
+  const benchmarkGap = totalForPoint(latestTrendPoint) - trailingAverage;
 
   return (
     <div className="mx-auto w-full max-w-[1320px]">
@@ -167,24 +148,16 @@ export default function DashboardPage() {
 
       <section className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
-          <article key={kpi.label} className="surface-panel panel-hover stagger-in p-5">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-secondary">{kpi.label}</p>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  kpi.positive ? "bg-brand-soft text-ink" : "bg-[#f8ebea] text-critical"
-                }`}
-              >
-                {kpi.positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                {kpi.delta}
-              </span>
-            </div>
-            <p className="mt-4 text-3xl font-semibold tracking-tight text-ink">{kpi.value}</p>
-            <p className="mt-1 text-xs text-text-secondary">{kpi.description}</p>
-            <div className="mt-4 h-1 rounded-full bg-brand-soft">
-              <div className={`h-1 rounded-full ${kpi.positive ? "bg-brand" : "bg-critical"}`} style={{ width: `${kpi.progress}%` }} />
-            </div>
-          </article>
+          <MetricCard
+            change={kpi.delta}
+            description={kpi.description}
+            format={kpi.format}
+            key={kpi.label}
+            positive={kpi.positive}
+            sparkline={kpi.sparkline}
+            value={kpi.value}
+            title={kpi.label}
+          />
         ))}
       </section>
 
@@ -205,118 +178,27 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-surface-border bg-white px-3 py-2.5">
                 <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-text-secondary">Current</p>
-                <p className="mt-1 text-base font-semibold text-ink">{latestPoint.visibility}% visibility</p>
+                <p className="mt-1 text-base font-semibold text-ink">{totalForPoint(latestTrendPoint)} mentions</p>
               </div>
               <div className="rounded-xl border border-surface-border bg-white px-3 py-2.5">
-                <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-text-secondary">Vs Benchmark</p>
-                <p className="mt-1 text-base font-semibold text-ink">+{benchmarkGap.toFixed(1)} pts</p>
+                <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-text-secondary">Vs 7D Average</p>
+                <p className="mt-1 text-base font-semibold text-ink">{`${benchmarkGap >= 0 ? "+" : ""}${benchmarkGap.toFixed(1)} pts`}</p>
               </div>
               <div className="rounded-xl border border-surface-border bg-white px-3 py-2.5">
                 <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-text-secondary">Acceleration</p>
-                <p className="mt-1 text-base font-semibold text-ink">+{acceleration.toFixed(1)} pts</p>
+                <p className="mt-1 text-base font-semibold text-ink">{`${acceleration >= 0 ? "+" : ""}${acceleration.toFixed(1)} pts`}</p>
               </div>
             </div>
 
-            <div className="mt-5 overflow-x-auto">
-              <svg aria-label="Visibility trend line chart" className="h-[296px] min-w-[640px] w-full" role="img" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
-                <defs>
-                  <linearGradient id="visibilityAreaFill" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#171a20" stopOpacity="0.18" />
-                    <stop offset="100%" stopColor="#171a20" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-
-                {yTicks.map((tick) => (
-                  <g key={tick}>
-                    <line x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={getY(tick)} y2={getY(tick)} stroke="#d9dadd" strokeDasharray="2 4" />
-                    <text fill="#8b9097" fontSize="11" textAnchor="end" x={chartPadding.left - 10} y={getY(tick) + 4}>
-                      {tick}
-                    </text>
-                  </g>
-                ))}
-
-                {xTickIndexes.map((tickIndex) => (
-                  <text
-                    key={trendData[tickIndex].label}
-                    fill="#8b9097"
-                    fontSize="11"
-                    textAnchor="middle"
-                    x={getX(tickIndex, trendData.length)}
-                    y={chartHeight - chartPadding.bottom + 22}
-                  >
-                    {trendData[tickIndex].label}
-                  </text>
-                ))}
-
-                <polyline
-                  fill="none"
-                  points={getPolylinePoints(benchmarkSeries)}
-                  stroke="#a2a7af"
-                  strokeDasharray="4 6"
-                  strokeLinecap="round"
-                  strokeWidth="2"
-                />
-
-                <path d={getAreaPath(visibilitySeries)} fill="url(#visibilityAreaFill)" />
-
-                <polyline fill="none" points={getPolylinePoints(visibilitySeries)} stroke="#171a20" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-
-                {visibilitySeries.map((point, index) => {
-                  if (index !== trendData.length - 1 && index !== trendData.length - 4 && index !== trendData.length - 8) return null;
-
-                  return (
-                    <circle
-                      key={`${trendData[index].label}-visibility-point`}
-                      cx={getX(index, trendData.length)}
-                      cy={getY(point)}
-                      fill="#ffffff"
-                      r="5"
-                      stroke="#171a20"
-                      strokeWidth="2.5"
-                    />
-                  );
-                })}
-
-                <g>
-                  <circle cx={getX(trendData.length - 1, trendData.length)} cy={getY(latestPoint.visibility)} fill="#171a20" r="4.5" />
-                  <circle cx={getX(trendData.length - 1, trendData.length)} cy={getY(latestPoint.visibility)} fill="none" r="10" stroke="#171a20" strokeOpacity="0.2" strokeWidth="2" />
-                </g>
-              </svg>
-            </div>
+            <VisibilityTrend payload={trendPayload} />
 
             <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-semibold text-text-secondary">
-              <div className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-brand" />
-                Brand Visibility
-              </div>
-              <div className="inline-flex items-center gap-2">
-                <span className="h-0.5 w-4 rounded bg-[#a2a7af]" />
-                Benchmark Cohort
-              </div>
-              <p>Updated {latestPoint.label} | Confidence: 92%</p>
+              <p>Updated {latestTrendPoint?.label ?? "N/A"} | Last 30 days</p>
             </div>
           </div>
         </article>
 
-        <article className="surface-panel panel-hover p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-ink">Live Mentions</h2>
-            <span className="rounded-full border border-surface-border bg-brand-soft px-2 py-1 text-[11px] font-semibold text-ink">LIVE</span>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {mentions.map((mention) => (
-              <div key={mention.title} className="rounded-xl border border-surface-border bg-white p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink">{mention.platform}</p>
-                  <p className="text-[11px] font-mono text-text-secondary">{mention.time}</p>
-                </div>
-                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{mention.title}</p>
-                <p className="mt-2 text-[11px] font-semibold text-ink">Relevance {mention.relevance}</p>
-              </div>
-            ))}
-          </div>
-        </article>
+        <LiveMentionsFeed accessToken={initialMentions.accessToken} clientId={selectedClientId} initialMentions={initialMentions.rows} />
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">

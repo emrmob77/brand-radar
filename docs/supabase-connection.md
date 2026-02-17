@@ -23,3 +23,7 @@
   - `geo_dashboard_core_schema`
   - `geo_dashboard_rls_policies`
   - `geo_dashboard_seed_platforms`
+  - `geo_dashboard_client_logo_storage`
+- RLS role verification script:
+  - `supabase/tests/rls_role_verification.sql`
+  - Validated with transactional run on 2026-02-17 (no persistent fixture data)
