@@ -4,6 +4,7 @@ export type NavIcon =
   | "mentions"
   | "competitors"
   | "optimizations"
+  | "trends"
   | "clients"
   | "forensics"
   | "alerts"
@@ -23,6 +24,7 @@ export const mainNavigation: NavItem[] = [
   { href: "/mentions", label: "Brand Mentions", icon: "mentions", hint: "Live sentiment" },
   { href: "/competitors", label: "Competitors", icon: "competitors", hint: "Market pressure" },
   { href: "/optimizations", label: "Optimizations", icon: "optimizations", hint: "Action board" },
+  { href: "/trends", label: "Historical Trends", icon: "trends", hint: "Time analysis" },
   { href: "/clients", label: "Clients", icon: "clients", hint: "Portfolio health" },
   { href: "/forensics", label: "Citation Forensics", icon: "forensics", hint: "Source quality" }
 ];

@@ -333,31 +333,31 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 9.3, 9.5_
 
 - [ ] 14. Tarihsel Trend Analizi
-  - [ ] 14.1 Tarihsel Trendler sayfası oluştur
+  - [x] 14.1 Tarihsel Trendler sayfası oluştur
     - Takvim ısı haritasıyla sayfa düzeni oluştur
     - Son 90 günün verilerini getir
     - Bahsetmeler, alıntılar ve duygu için trendleri göster
     - _Gereksinimler: 12.1_
   
-  - [ ] 14.2 Tarih aralığı seçiciyi uygula
+  - [x] 14.2 Tarih aralığı seçiciyi uygula
     - Tarih seçici bileşeni oluştur
     - Özel tarih aralığı seçimine izin ver
     - Seçilen aralığa göre grafikleri güncelle
     - _Gereksinimler: 12.2_
   
-  - [ ] 14.3 Önce/sonra karşılaştırması oluştur
+  - [x] 14.3 Önce/sonra karşılaştırması oluştur
     - İki tarih aralığı için karşılaştırma görünümü oluştur
     - Yüzde değişimlerini hesapla
     - Yan yana metrikleri göster
     - _Gereksinimler: 12.3_
   
-  - [ ] 14.4 Hareketli ortalama hesaplamasını uygula
+  - [x] 14.4 Hareketli ortalama hesaplamasını uygula
     - Hareketli ortalamaları hesaplamak için fonksiyon oluştur
     - Trend grafiklerine hareketli ortalama çizgisi ekle
     - Farklı pencere boyutlarını destekle (7 günlük, 30 günlük)
     - _Gereksinimler: 12.4_
   
-  - [ ] 14.5 Toplama seçenekleri ekle
+  - [x] 14.5 Toplama seçenekleri ekle
     - Günlük, haftalık ve aylık toplama uygula
     - Toplama seçimi için geçiş butonları oluştur
     - Seçilen toplamaya göre grafikleri güncelle
