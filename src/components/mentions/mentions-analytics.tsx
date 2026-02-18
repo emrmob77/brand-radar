@@ -500,7 +500,33 @@ export function MentionsAnalytics({ accessToken, analytics, clientId, rows }: Me
 
           <FilterChips chips={activeFilterChips} onClearAll={clearAllFilters} />
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 space-y-2 sm:hidden">
+            {pagedRows.length === 0 ? (
+              <p className="rounded-xl border border-surface-border bg-white px-3 py-4 text-sm text-text-secondary">No mention matches these filters.</p>
+            ) : (
+              pagedRows.map((row) => {
+                const riskLevel = deriveRisk(row);
+                return (
+                  <article className="rounded-xl border border-surface-border bg-white p-3" key={row.id}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-ink">{row.platform}</p>
+                      <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]", riskBadgeClass(riskLevel))}>
+                        {riskLevel}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-ink">{row.query}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-text-secondary">{row.content}</p>
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className="capitalize text-ink">{row.sentiment}</span>
+                      <span className="text-text-secondary">{format(new Date(row.detectedAt), "yyyy-MM-dd HH:mm")}</span>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-4 hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead>
                 <tr className="border-b border-surface-border text-xs uppercase tracking-[0.12em] text-text-secondary">

@@ -19,11 +19,17 @@ const inviteSchema = z.object({
 export type InviteUserFormState = {
   error: string | null;
   success: string | null;
+  fieldErrors?: {
+    email?: string;
+    role?: string;
+    clientIds?: string;
+  };
 };
 
 export const initialInviteUserFormState: InviteUserFormState = {
   error: null,
-  success: null
+  success: null,
+  fieldErrors: {}
 };
 
 function normalizeHexColor(value: string | null | undefined, fallback: string) {
@@ -125,7 +131,7 @@ export async function inviteUserAction(
 ): Promise<InviteUserFormState> {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
   if (!accessToken) {
-    return { error: "Session not found.", success: null };
+    return { error: "Session not found.", success: null, fieldErrors: {} };
   }
 
   const parsed = inviteSchema.safeParse({
@@ -135,9 +141,15 @@ export async function inviteUserAction(
   });
 
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
       error: parsed.error.issues[0]?.message ?? "Validation failed.",
-      success: null
+      success: null,
+      fieldErrors: {
+        email: fieldErrors.email?.[0],
+        role: fieldErrors.role?.[0],
+        clientIds: fieldErrors.clientIds?.[0]
+      }
     };
   }
 
@@ -145,7 +157,8 @@ export async function inviteUserAction(
   if (!actor || actor.role !== "admin") {
     return {
       error: "Only admin users can send invitations.",
-      success: null
+      success: null,
+      fieldErrors: {}
     };
   }
 
@@ -180,14 +193,14 @@ export async function inviteUserAction(
       });
 
       if (linkResult.error) {
-        return { error: linkResult.error.message, success: null };
+        return { error: linkResult.error.message, success: null, fieldErrors: {} };
       }
 
       invitedUserId = linkResult.data.user?.id;
       const actionLink = getInvitationActionLink(linkResult.data);
 
       if (!actionLink) {
-        return { error: "Failed to generate invitation link.", success: null };
+        return { error: "Failed to generate invitation link.", success: null, fieldErrors: {} };
       }
 
       const template = buildInvitationEmailTemplate({
@@ -215,7 +228,7 @@ export async function inviteUserAction(
       });
 
       if (!sendResult.ok) {
-        return { error: sendResult.error, success: null };
+        return { error: sendResult.error, success: null, fieldErrors: {} };
       }
 
       brandedDeliveryEnabled = true;
@@ -230,7 +243,7 @@ export async function inviteUserAction(
       });
 
       if (inviteResult.error) {
-        return { error: inviteResult.error.message, success: null };
+        return { error: inviteResult.error.message, success: null, fieldErrors: {} };
       }
 
       invitedUserId = inviteResult.data.user?.id;
@@ -248,13 +261,14 @@ export async function inviteUserAction(
         { onConflict: "id" }
       );
       if (upsertResult.error) {
-        return { error: upsertResult.error.message, success: null };
+        return { error: upsertResult.error.message, success: null, fieldErrors: {} };
       }
     }
 
     revalidatePath("/settings/users");
     return {
       error: null,
+      fieldErrors: {},
       success: brandedDeliveryEnabled
         ? `Branded invitation sent to ${parsed.data.email}.`
         : `Invitation sent to ${parsed.data.email}. Configure RESEND_API_KEY and EMAIL_FROM for branded email templates.`
@@ -265,7 +279,10 @@ export async function inviteUserAction(
   if (!firstClientId) {
     return {
       error: "Select at least one client permission.",
-      success: null
+      success: null,
+      fieldErrors: {
+        clientIds: "Select at least one client permission."
+      }
     };
   }
 
@@ -283,6 +300,7 @@ export async function inviteUserAction(
   revalidatePath("/settings/users");
   return {
     error: null,
+    fieldErrors: {},
     success: `Invite queued for ${parsed.data.email}. Configure SUPABASE_SERVICE_ROLE_KEY to enable email delivery.`
   };
 }

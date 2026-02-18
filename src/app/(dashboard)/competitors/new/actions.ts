@@ -15,10 +15,16 @@ const competitorSchema = z.object({
 
 export type NewCompetitorFormState = {
   error: string | null;
+  fieldErrors?: {
+    clientId?: string;
+    name?: string;
+    domain?: string;
+  };
 };
 
 export const initialCompetitorFormState: NewCompetitorFormState = {
-  error: null
+  error: null,
+  fieldErrors: {}
 };
 
 function normalizeDomain(input: string): string | null {
@@ -36,7 +42,7 @@ function normalizeDomain(input: string): string | null {
 export async function createCompetitorAction(_prev: NewCompetitorFormState, formData: FormData): Promise<NewCompetitorFormState> {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
   if (!accessToken) {
-    return { error: "Session not found." };
+    return { error: "Session not found.", fieldErrors: {} };
   }
 
   const domainEntry = formData.get("domain");
@@ -48,8 +54,14 @@ export async function createCompetitorAction(_prev: NewCompetitorFormState, form
   });
 
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
-      error: parsed.error.issues[0]?.message ?? "Form validation failed."
+      error: parsed.error.issues[0]?.message ?? "Form validation failed.",
+      fieldErrors: {
+        clientId: fieldErrors.clientId?.[0],
+        name: fieldErrors.name?.[0],
+        domain: fieldErrors.domain?.[0]
+      }
     };
   }
 
@@ -60,11 +72,11 @@ export async function createCompetitorAction(_prev: NewCompetitorFormState, form
     .eq("client_id", parsed.data.clientId);
 
   if (countError) {
-    return { error: countError.message };
+    return { error: countError.message, fieldErrors: {} };
   }
 
   if ((count ?? 0) >= 10) {
-    return { error: "A maximum of 10 competitors can be added per client." };
+    return { error: "A maximum of 10 competitors can be added per client.", fieldErrors: {} };
   }
 
   const { error } = await supabase.from("competitors").insert({
@@ -74,7 +86,7 @@ export async function createCompetitorAction(_prev: NewCompetitorFormState, form
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message, fieldErrors: {} };
   }
 
   revalidatePath("/competitors");

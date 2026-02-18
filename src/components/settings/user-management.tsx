@@ -91,6 +91,7 @@ export function UserManagement({ clients, users }: UserManagementProps) {
               required
               type="email"
             />
+            {state.fieldErrors?.email ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.email}</span> : null}
           </label>
 
           <label className="block text-sm">
@@ -100,6 +101,7 @@ export function UserManagement({ clients, users }: UserManagementProps) {
               <option value="editor">Editor</option>
               <option value="viewer">Viewer</option>
             </select>
+            {state.fieldErrors?.role ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.role}</span> : null}
           </label>
 
           <fieldset>
@@ -118,6 +120,7 @@ export function UserManagement({ clients, users }: UserManagementProps) {
                 ))
               )}
             </div>
+            {state.fieldErrors?.clientIds ? <span className="mt-2 block text-xs text-critical">{state.fieldErrors.clientIds}</span> : null}
           </fieldset>
 
           {state.error ? (

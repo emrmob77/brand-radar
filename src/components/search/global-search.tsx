@@ -5,6 +5,8 @@ import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchGlobalAction, type GlobalSearchResult } from "@/app/(dashboard)/actions/global-search";
+import { useToast } from "@/components/providers/toast-provider";
+import { runWithRetry } from "@/lib/api/retry";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,7 @@ function kindLabel(kind: GlobalSearchResult["kind"]) {
 }
 
 export function GlobalSearch({ clientId }: GlobalSearchProps) {
+  const { notify } = useToast();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -31,11 +34,15 @@ export function GlobalSearch({ clientId }: GlobalSearchProps) {
     enabled: normalizedDebouncedQuery.length >= 2,
     staleTime: 45_000,
     queryFn: () =>
-      searchGlobalAction({
-        term: normalizedDebouncedQuery,
-        clientId,
-        limit: 15
-      })
+      runWithRetry(
+        () =>
+          searchGlobalAction({
+            term: normalizedDebouncedQuery,
+            clientId,
+            limit: 15
+          }),
+        { retries: 2, baseDelayMs: 220 }
+      )
   });
 
   const results = useMemo<GlobalSearchResult[]>(() => {
@@ -81,6 +88,18 @@ export function GlobalSearch({ clientId }: GlobalSearchProps) {
       setOpen(true);
     }
   }, [normalizedDebouncedQuery, searchQuery.data, searchQuery.isFetching]);
+
+  useEffect(() => {
+    if (!searchQuery.error) {
+      return;
+    }
+
+    notify({
+      title: "Search request failed",
+      description: "Network error. Retried automatically, please try again.",
+      variant: "error"
+    });
+  }, [notify, searchQuery.error]);
 
   return (
     <div className="relative w-[340px]" ref={wrapperRef}>

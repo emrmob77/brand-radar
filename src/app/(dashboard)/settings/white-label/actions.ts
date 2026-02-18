@@ -18,11 +18,18 @@ const whiteLabelSchema = z.object({
 export type WhiteLabelFormState = {
   error: string | null;
   success: string | null;
+  fieldErrors?: {
+    companyName?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    customDomain?: string;
+  };
 };
 
 export const initialWhiteLabelFormState: WhiteLabelFormState = {
   error: null,
-  success: null
+  success: null,
+  fieldErrors: {}
 };
 
 function isValidHostname(value: string) {
@@ -72,12 +79,12 @@ export async function updateWhiteLabelAction(
 ): Promise<WhiteLabelFormState> {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
   if (!accessToken) {
-    return { error: "Session not found.", success: null };
+    return { error: "Session not found.", success: null, fieldErrors: {} };
   }
 
   const currentUser = await getCurrentUser(accessToken);
   if (!currentUser || currentUser.role !== "admin") {
-    return { error: "Only admin users can update white-label settings.", success: null };
+    return { error: "Only admin users can update white-label settings.", success: null, fieldErrors: {} };
   }
 
   const parsed = whiteLabelSchema.safeParse({
@@ -87,9 +94,15 @@ export async function updateWhiteLabelAction(
   });
 
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
       error: parsed.error.issues[0]?.message ?? "Validation failed.",
-      success: null
+      success: null,
+      fieldErrors: {
+        companyName: fieldErrors.companyName?.[0],
+        primaryColor: fieldErrors.primaryColor?.[0],
+        secondaryColor: fieldErrors.secondaryColor?.[0]
+      }
     };
   }
 
@@ -101,7 +114,10 @@ export async function updateWhiteLabelAction(
   if (rawCustomDomain.trim().length > 0 && !normalizedCustomDomain) {
     return {
       error: "Custom domain must be a valid hostname (example: geo.youragency.com).",
-      success: null
+      success: null,
+      fieldErrors: {
+        customDomain: "Custom domain must be a valid hostname."
+      }
     };
   }
 
@@ -115,13 +131,16 @@ export async function updateWhiteLabelAction(
       .maybeSingle();
 
     if (existingDomain.error) {
-      return { error: existingDomain.error.message, success: null };
+      return { error: existingDomain.error.message, success: null, fieldErrors: {} };
     }
 
     if (existingDomain.data?.id) {
       return {
         error: "This custom domain is already in use by another workspace.",
-        success: null
+        success: null,
+        fieldErrors: {
+          customDomain: "This custom domain is already in use."
+        }
       };
     }
   }
@@ -138,7 +157,7 @@ export async function updateWhiteLabelAction(
     });
 
     if (uploadResult.error) {
-      return { error: uploadResult.error.message, success: null };
+      return { error: uploadResult.error.message, success: null, fieldErrors: {} };
     }
 
     const publicUrlResult = supabase.storage.from("client-logos").getPublicUrl(path);
@@ -167,7 +186,7 @@ export async function updateWhiteLabelAction(
     .update(updatePayload)
     .eq("id", currentUser.agencyId);
   if (updateResult.error) {
-    return { error: updateResult.error.message, success: null };
+    return { error: updateResult.error.message, success: null, fieldErrors: {} };
   }
 
   revalidatePath("/", "layout");
@@ -175,6 +194,7 @@ export async function updateWhiteLabelAction(
   revalidatePath("/settings/white-label");
   return {
     error: null,
-    success: "White-label settings saved."
+    success: "White-label settings saved.",
+    fieldErrors: {}
   };
 }

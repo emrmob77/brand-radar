@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { logServerError } from "@/lib/monitoring/error-logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const globalSearchSchema = z.object({
@@ -77,77 +78,78 @@ export async function searchGlobalAction(input: {
   clientId?: string | null;
   limit?: number;
 }): Promise<GlobalSearchResponse> {
-  const parsed = globalSearchSchema.safeParse({
-    term: input.term,
-    clientId: input.clientId ?? null,
-    limit: input.limit
-  });
+  try {
+    const parsed = globalSearchSchema.safeParse({
+      term: input.term,
+      clientId: input.clientId ?? null,
+      limit: input.limit
+    });
 
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid search query." };
-  }
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid search query." };
+    }
 
-  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!accessToken) {
-    return { ok: false, error: "Session not found." };
-  }
+    const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+    if (!accessToken) {
+      return { ok: false, error: "Session not found." };
+    }
 
-  const user = await getCurrentUser(accessToken);
-  if (!user) {
-    return { ok: false, error: "User not authenticated." };
-  }
+    const user = await getCurrentUser(accessToken);
+    if (!user) {
+      return { ok: false, error: "User not authenticated." };
+    }
 
-  const supabase = createServerSupabaseClient(accessToken);
-  const term = stripWildcards(parsed.data.term);
-  const ilikeTerm = `%${term}%`;
-  const perSource = Math.max(2, Math.floor((parsed.data.limit ?? 15) / 3));
+    const supabase = createServerSupabaseClient(accessToken);
+    const term = stripWildcards(parsed.data.term);
+    const ilikeTerm = `%${term}%`;
+    const perSource = Math.max(2, Math.floor((parsed.data.limit ?? 15) / 3));
 
-  let mentionQuery = supabase
-    .from("mentions")
-    .select("id,query,content,detected_at,client_id,platforms(name),clients(name)")
-    .or(`query.ilike.${ilikeTerm},content.ilike.${ilikeTerm}`)
-    .order("detected_at", { ascending: false })
-    .limit(perSource);
+    let mentionQuery = supabase
+      .from("mentions")
+      .select("id,query,content,detected_at,client_id,platforms(name),clients(name)")
+      .or(`query.ilike.${ilikeTerm},content.ilike.${ilikeTerm}`)
+      .order("detected_at", { ascending: false })
+      .limit(perSource);
 
-  if (parsed.data.clientId) {
-    mentionQuery = mentionQuery.eq("client_id", parsed.data.clientId);
-  }
+    if (parsed.data.clientId) {
+      mentionQuery = mentionQuery.eq("client_id", parsed.data.clientId);
+    }
 
-  let citationQuery = supabase
+    let citationQuery = supabase
     .from("citations")
     .select("id,query,source_url,source_type,detected_at,client_id,clients(name)")
     .or(`query.ilike.${ilikeTerm},source_url.ilike.${ilikeTerm}`)
     .order("detected_at", { ascending: false })
     .limit(perSource);
 
-  if (parsed.data.clientId) {
-    citationQuery = citationQuery.eq("client_id", parsed.data.clientId);
-  }
+    if (parsed.data.clientId) {
+      citationQuery = citationQuery.eq("client_id", parsed.data.clientId);
+    }
 
-  let querySearch = supabase
+    let querySearch = supabase
     .from("queries")
     .select("id,text,category,priority,created_at,client_id,clients(name)")
     .or(`text.ilike.${ilikeTerm},category.ilike.${ilikeTerm}`)
     .order("created_at", { ascending: false })
     .limit(perSource);
 
-  if (parsed.data.clientId) {
-    querySearch = querySearch.eq("client_id", parsed.data.clientId);
-  }
+    if (parsed.data.clientId) {
+      querySearch = querySearch.eq("client_id", parsed.data.clientId);
+    }
 
-  const [mentionsResult, citationsResult, queriesResult] = await Promise.all([mentionQuery, citationQuery, querySearch]);
+    const [mentionsResult, citationsResult, queriesResult] = await Promise.all([mentionQuery, citationQuery, querySearch]);
 
-  if (mentionsResult.error) {
-    return { ok: false, error: mentionsResult.error.message };
-  }
-  if (citationsResult.error) {
-    return { ok: false, error: citationsResult.error.message };
-  }
-  if (queriesResult.error) {
-    return { ok: false, error: queriesResult.error.message };
-  }
+    if (mentionsResult.error) {
+      return { ok: false, error: mentionsResult.error.message };
+    }
+    if (citationsResult.error) {
+      return { ok: false, error: citationsResult.error.message };
+    }
+    if (queriesResult.error) {
+      return { ok: false, error: queriesResult.error.message };
+    }
 
-  const mentionRows = (mentionsResult.data ?? []).map((row): GlobalSearchResult => {
+    const mentionRows = (mentionsResult.data ?? []).map((row): GlobalSearchResult => {
     const clientName = relationName(row.clients) ?? "Client";
     const platformName = relationName(row.platforms) ?? "Platform";
     const title = shorten(row.query, 88);
@@ -164,7 +166,7 @@ export async function searchGlobalAction(input: {
     };
   });
 
-  const citationRows = (citationsResult.data ?? []).map((row): GlobalSearchResult => {
+    const citationRows = (citationsResult.data ?? []).map((row): GlobalSearchResult => {
     const clientName = relationName(row.clients) ?? "Client";
     const sourceType = row.source_type ?? "source";
     const title = shorten(row.query, 88);
@@ -181,7 +183,7 @@ export async function searchGlobalAction(input: {
     };
   });
 
-  const queryRows = (queriesResult.data ?? []).map((row): GlobalSearchResult => {
+    const queryRows = (queriesResult.data ?? []).map((row): GlobalSearchResult => {
     const clientName = relationName(row.clients) ?? "Client";
     const category = row.category ?? "general";
     const title = shorten(row.text, 88);
@@ -198,16 +200,26 @@ export async function searchGlobalAction(input: {
     };
   });
 
-  const results = [...mentionRows, ...citationRows, ...queryRows]
-    .sort((left, right) => {
-      const leftTime = left.occurredAt ? Date.parse(left.occurredAt) : 0;
-      const rightTime = right.occurredAt ? Date.parse(right.occurredAt) : 0;
-      return rightTime - leftTime;
-    })
-    .slice(0, parsed.data.limit ?? 15);
+    const results = [...mentionRows, ...citationRows, ...queryRows]
+      .sort((left, right) => {
+        const leftTime = left.occurredAt ? Date.parse(left.occurredAt) : 0;
+        const rightTime = right.occurredAt ? Date.parse(right.occurredAt) : 0;
+        return rightTime - leftTime;
+      })
+      .slice(0, parsed.data.limit ?? 15);
 
-  return {
-    ok: true,
-    results
-  };
+    return {
+      ok: true,
+      results
+    };
+  } catch (error) {
+    await logServerError(error, {
+      area: "actions/global-search",
+      metadata: {
+        clientId: input.clientId ?? null,
+        termLength: input.term.length
+      }
+    });
+    return { ok: false, error: "Search request failed unexpectedly." };
+  }
 }

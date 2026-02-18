@@ -45,6 +45,7 @@ export function WhiteLabelForm({ agency, dnsTarget }: WhiteLabelFormProps) {
             required
             type="text"
           />
+          {state.fieldErrors?.companyName ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.companyName}</span> : null}
         </label>
 
         <label className="text-sm">
@@ -53,6 +54,7 @@ export function WhiteLabelForm({ agency, dnsTarget }: WhiteLabelFormProps) {
             <input className="h-10 w-full rounded border border-surface-border" defaultValue={agency.primaryColor} name="primaryColor" type="color" />
             <p className="mt-1 text-xs text-text-secondary">{agency.primaryColor}</p>
           </div>
+          {state.fieldErrors?.primaryColor ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.primaryColor}</span> : null}
         </label>
 
         <label className="text-sm">
@@ -61,6 +63,7 @@ export function WhiteLabelForm({ agency, dnsTarget }: WhiteLabelFormProps) {
             <input className="h-10 w-full rounded border border-surface-border" defaultValue={agency.secondaryColor} name="secondaryColor" type="color" />
             <p className="mt-1 text-xs text-text-secondary">{agency.secondaryColor}</p>
           </div>
+          {state.fieldErrors?.secondaryColor ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.secondaryColor}</span> : null}
         </label>
 
         <label className="text-sm md:col-span-2">
@@ -92,6 +95,7 @@ export function WhiteLabelForm({ agency, dnsTarget }: WhiteLabelFormProps) {
             placeholder="geo.youragency.com"
             type="text"
           />
+          {state.fieldErrors?.customDomain ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.customDomain}</span> : null}
         </label>
 
         <div className="mt-4 rounded-xl border border-surface-border bg-white p-3">

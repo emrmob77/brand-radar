@@ -38,6 +38,7 @@ export function NewClientForm({ platforms }: { platforms: PlatformOption[] }) {
             required
             type="text"
           />
+          {state.fieldErrors?.name ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.name}</span> : null}
         </label>
 
         <label className="text-sm">
@@ -49,6 +50,7 @@ export function NewClientForm({ platforms }: { platforms: PlatformOption[] }) {
             required
             type="text"
           />
+          {state.fieldErrors?.domain ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.domain}</span> : null}
         </label>
 
         <label className="text-sm md:col-span-2">
@@ -60,6 +62,7 @@ export function NewClientForm({ platforms }: { platforms: PlatformOption[] }) {
             required
             type="text"
           />
+          {state.fieldErrors?.industry ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.industry}</span> : null}
         </label>
 
         <label className="text-sm md:col-span-2">
@@ -83,6 +86,7 @@ export function NewClientForm({ platforms }: { platforms: PlatformOption[] }) {
             </label>
           ))}
         </div>
+        {state.fieldErrors?.platformSlugs ? <span className="mt-2 block text-xs text-critical">{state.fieldErrors.platformSlugs}</span> : null}
       </fieldset>
 
       {state.error ? (

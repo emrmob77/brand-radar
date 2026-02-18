@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { logServerError } from "@/lib/monitoring/error-logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const exportFormatSchema = z.enum(["csv", "json", "pdf"]);
@@ -817,177 +818,208 @@ async function logExportAuditEntry(params: {
 }
 
 export async function requestDataExportAction(input: RequestExportInput): Promise<RequestExportResult> {
-  const parsed = requestExportSchema.safeParse({
-    format: input.format,
-    scope: input.scope,
-    clientId: input.clientId ?? null
-  });
+  try {
+    const parsed = requestExportSchema.safeParse({
+      format: input.format,
+      scope: input.scope,
+      clientId: input.clientId ?? null
+    });
 
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid export request." };
-  }
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid export request." };
+    }
 
-  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!accessToken) {
-    return { ok: false, error: "Session not found." };
-  }
+    const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+    if (!accessToken) {
+      return { ok: false, error: "Session not found." };
+    }
 
-  const user = await getCurrentUser(accessToken);
-  if (!user) {
-    return { ok: false, error: "User not authenticated." };
-  }
+    const user = await getCurrentUser(accessToken);
+    if (!user) {
+      return { ok: false, error: "User not authenticated." };
+    }
 
-  const loaded = await loadScopeRows(parsed.data.scope, parsed.data.clientId ?? null, accessToken, user.agencyId);
-  if ("error" in loaded) {
-    return { ok: false, error: loaded.error };
-  }
-
-  const rows = normalizeRows(loaded.rows);
-  const generatedAt = new Date();
-  const timeStamp = generatedAt.toISOString().replace(/[:.]/g, "-");
-  const file = buildExportFile(
-    parsed.data.format,
-    parsed.data.scope,
-    rows,
-    generatedAt,
-    `brand-radar-${parsed.data.scope}-${timeStamp}`
-  );
-
-  await logExportAuditEntry({
-    accessToken,
-    agencyId: user.agencyId,
-    userId: user.id,
-    clientId: parsed.data.clientId ?? null,
-    scope: parsed.data.scope,
-    format: parsed.data.format,
-    fileName: file.fileName,
-    rowCount: file.rowCount,
-    isBulk: false
-  });
-
-  return {
-    ok: true,
-    fileName: file.fileName,
-    mimeType: file.mimeType,
-    contentBase64: asBase64(file.content),
-    rowCount: file.rowCount
-  };
-}
-
-export async function listExportClientsAction(): Promise<{ ok: true; clients: ExportClientOption[] } | { ok: false; error: string }> {
-  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!accessToken) {
-    return { ok: false, error: "Session not found." };
-  }
-
-  const user = await getCurrentUser(accessToken);
-  if (!user) {
-    return { ok: false, error: "User not authenticated." };
-  }
-
-  const supabase = createServerSupabaseClient(accessToken);
-  const query = await supabase
-    .from("clients")
-    .select("id,name")
-    .eq("agency_id", user.agencyId)
-    .order("name", { ascending: true })
-    .limit(300);
-
-  if (query.error) {
-    return { ok: false, error: query.error.message };
-  }
-
-  return {
-    ok: true,
-    clients: (query.data ?? []).map((client) => ({ id: client.id, name: client.name }))
-  };
-}
-
-export async function requestBulkDataExportAction(input: RequestBulkExportInput): Promise<RequestExportResult> {
-  const parsed = requestBulkExportSchema.safeParse({
-    format: input.format,
-    scope: input.scope,
-    clientIds: input.clientIds
-  });
-
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid bulk export request." };
-  }
-
-  const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!accessToken) {
-    return { ok: false, error: "Session not found." };
-  }
-
-  const user = await getCurrentUser(accessToken);
-  if (!user) {
-    return { ok: false, error: "User not authenticated." };
-  }
-
-  const supabase = createServerSupabaseClient(accessToken);
-  const clientsQuery = await supabase
-    .from("clients")
-    .select("id,name")
-    .eq("agency_id", user.agencyId)
-    .in("id", parsed.data.clientIds);
-
-  if (clientsQuery.error) {
-    return { ok: false, error: clientsQuery.error.message };
-  }
-
-  const clients = clientsQuery.data ?? [];
-  if (clients.length === 0) {
-    return { ok: false, error: "No valid clients found for bulk export." };
-  }
-
-  const generatedAt = new Date();
-  const entries: Array<{ name: string; content: Buffer }> = [];
-  let totalRows = 0;
-
-  for (const client of clients) {
-    const loaded = await loadScopeRows(parsed.data.scope, client.id, accessToken, user.agencyId);
+    const loaded = await loadScopeRows(parsed.data.scope, parsed.data.clientId ?? null, accessToken, user.agencyId);
     if ("error" in loaded) {
       return { ok: false, error: loaded.error };
     }
 
     const rows = normalizeRows(loaded.rows);
-    totalRows += rows.length;
-
+    const generatedAt = new Date();
+    const timeStamp = generatedAt.toISOString().replace(/[:.]/g, "-");
     const file = buildExportFile(
       parsed.data.format,
       parsed.data.scope,
       rows,
       generatedAt,
-      `${sanitizeFileToken(client.name)}-${parsed.data.scope}`
+      `brand-radar-${parsed.data.scope}-${timeStamp}`
     );
 
-    entries.push({
-      name: file.fileName,
-      content: file.content
+    await logExportAuditEntry({
+      accessToken,
+      agencyId: user.agencyId,
+      userId: user.id,
+      clientId: parsed.data.clientId ?? null,
+      scope: parsed.data.scope,
+      format: parsed.data.format,
+      fileName: file.fileName,
+      rowCount: file.rowCount,
+      isBulk: false
     });
+
+    return {
+      ok: true,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+      contentBase64: asBase64(file.content),
+      rowCount: file.rowCount
+    };
+  } catch (error) {
+    await logServerError(error, {
+      area: "actions/request-data-export",
+      metadata: {
+        scope: input.scope,
+        format: input.format,
+        clientId: input.clientId ?? null
+      }
+    });
+    return { ok: false, error: "Export request failed unexpectedly." };
   }
+}
 
-  const zipBuffer = buildZip(entries, generatedAt);
-  const timeStamp = generatedAt.toISOString().replace(/[:.]/g, "-");
-  const zipFileName = `brand-radar-${parsed.data.scope}-bulk-${timeStamp}.zip`;
+export async function listExportClientsAction(): Promise<{ ok: true; clients: ExportClientOption[] } | { ok: false; error: string }> {
+  try {
+    const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+    if (!accessToken) {
+      return { ok: false, error: "Session not found." };
+    }
 
-  await logExportAuditEntry({
-    accessToken,
-    agencyId: user.agencyId,
-    userId: user.id,
-    clientId: null,
-    scope: parsed.data.scope,
-    format: "zip",
-    fileName: zipFileName,
-    rowCount: totalRows,
-    isBulk: true
-  });
+    const user = await getCurrentUser(accessToken);
+    if (!user) {
+      return { ok: false, error: "User not authenticated." };
+    }
 
-  return {
-    ok: true,
-    fileName: zipFileName,
-    mimeType: "application/zip",
-    contentBase64: asBase64(zipBuffer),
-    rowCount: totalRows
-  };
+    const supabase = createServerSupabaseClient(accessToken);
+    const query = await supabase
+      .from("clients")
+      .select("id,name")
+      .eq("agency_id", user.agencyId)
+      .order("name", { ascending: true })
+      .limit(300);
+
+    if (query.error) {
+      return { ok: false, error: query.error.message };
+    }
+
+    return {
+      ok: true,
+      clients: (query.data ?? []).map((client) => ({ id: client.id, name: client.name }))
+    };
+  } catch (error) {
+    await logServerError(error, {
+      area: "actions/list-export-clients"
+    });
+    return { ok: false, error: "Could not load clients for export." };
+  }
+}
+
+export async function requestBulkDataExportAction(input: RequestBulkExportInput): Promise<RequestExportResult> {
+  try {
+    const parsed = requestBulkExportSchema.safeParse({
+      format: input.format,
+      scope: input.scope,
+      clientIds: input.clientIds
+    });
+
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid bulk export request." };
+    }
+
+    const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
+    if (!accessToken) {
+      return { ok: false, error: "Session not found." };
+    }
+
+    const user = await getCurrentUser(accessToken);
+    if (!user) {
+      return { ok: false, error: "User not authenticated." };
+    }
+
+    const supabase = createServerSupabaseClient(accessToken);
+    const clientsQuery = await supabase
+      .from("clients")
+      .select("id,name")
+      .eq("agency_id", user.agencyId)
+      .in("id", parsed.data.clientIds);
+
+    if (clientsQuery.error) {
+      return { ok: false, error: clientsQuery.error.message };
+    }
+
+    const clients = clientsQuery.data ?? [];
+    if (clients.length === 0) {
+      return { ok: false, error: "No valid clients found for bulk export." };
+    }
+
+    const generatedAt = new Date();
+    const entries: Array<{ name: string; content: Buffer }> = [];
+    let totalRows = 0;
+
+    for (const client of clients) {
+      const loaded = await loadScopeRows(parsed.data.scope, client.id, accessToken, user.agencyId);
+      if ("error" in loaded) {
+        return { ok: false, error: loaded.error };
+      }
+
+      const rows = normalizeRows(loaded.rows);
+      totalRows += rows.length;
+
+      const file = buildExportFile(
+        parsed.data.format,
+        parsed.data.scope,
+        rows,
+        generatedAt,
+        `${sanitizeFileToken(client.name)}-${parsed.data.scope}`
+      );
+
+      entries.push({
+        name: file.fileName,
+        content: file.content
+      });
+    }
+
+    const zipBuffer = buildZip(entries, generatedAt);
+    const timeStamp = generatedAt.toISOString().replace(/[:.]/g, "-");
+    const zipFileName = `brand-radar-${parsed.data.scope}-bulk-${timeStamp}.zip`;
+
+    await logExportAuditEntry({
+      accessToken,
+      agencyId: user.agencyId,
+      userId: user.id,
+      clientId: null,
+      scope: parsed.data.scope,
+      format: "zip",
+      fileName: zipFileName,
+      rowCount: totalRows,
+      isBulk: true
+    });
+
+    return {
+      ok: true,
+      fileName: zipFileName,
+      mimeType: "application/zip",
+      contentBase64: asBase64(zipBuffer),
+      rowCount: totalRows
+    };
+  } catch (error) {
+    await logServerError(error, {
+      area: "actions/request-bulk-data-export",
+      metadata: {
+        scope: input.scope,
+        format: input.format,
+        clientCount: input.clientIds.length
+      }
+    });
+    return { ok: false, error: "Bulk export request failed unexpectedly." };
+  }
 }

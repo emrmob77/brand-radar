@@ -229,6 +229,7 @@ function AppShellFrame({ children, hideSidebar = false, clients = [], accessToke
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientMenuRef = useRef<HTMLDivElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [clientMenuOpen, setClientMenuOpen] = useState(false);
   const [clientQuery, setClientQuery] = useState("");
@@ -291,8 +292,50 @@ function AppShellFrame({ children, hideSidebar = false, clients = [], accessToke
     setClientQuery("");
   }
 
+  function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function handleTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) {
+      return;
+    }
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    if (!touch) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
+
+    if (!mobileOpen && start.x < 28 && deltaX > 64) {
+      setMobileOpen(true);
+      return;
+    }
+
+    if (mobileOpen && deltaX < -64) {
+      setMobileOpen(false);
+    }
+  }
+
   return (
-    <div className="app-shell-bg flex min-h-screen bg-background-dark">
+    <div className="app-shell-bg flex min-h-screen bg-background-dark" onTouchEnd={handleTouchEnd} onTouchStart={handleTouchStart}>
       {shouldShowSidebar && (
         <>
           <div

@@ -37,6 +37,7 @@ export function NewCompetitorForm({ clientId }: NewCompetitorFormProps) {
             required
             type="text"
           />
+          {state.fieldErrors?.name ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.name}</span> : null}
         </label>
 
         <label className="text-sm">
@@ -48,6 +49,7 @@ export function NewCompetitorForm({ clientId }: NewCompetitorFormProps) {
             required
             type="text"
           />
+          {state.fieldErrors?.domain ? <span className="mt-1 block text-xs text-critical">{state.fieldErrors.domain}</span> : null}
         </label>
       </div>
 
@@ -55,6 +57,9 @@ export function NewCompetitorForm({ clientId }: NewCompetitorFormProps) {
         <p className="mt-4 rounded-xl border border-critical/30 bg-critical/10 px-3 py-2 text-xs text-critical">
           You must select a client first to add a competitor.
         </p>
+      ) : null}
+      {state.fieldErrors?.clientId ? (
+        <p className="mt-4 rounded-xl border border-critical/30 bg-critical/10 px-3 py-2 text-xs text-critical">{state.fieldErrors.clientId}</p>
       ) : null}
 
       {state.error ? (

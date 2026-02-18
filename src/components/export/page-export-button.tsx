@@ -10,6 +10,8 @@ import {
   type ExportClientOption,
   type RequestExportInput
 } from "@/app/(dashboard)/actions/exports";
+import { useToast } from "@/components/providers/toast-provider";
+import { runWithRetry } from "@/lib/api/retry";
 import { cn } from "@/lib/utils";
 
 type ExportFormat = RequestExportInput["format"];
@@ -75,6 +77,7 @@ function triggerDownload(fileName: string, mimeType: string, contentBase64: stri
 }
 
 export function PageExportButton() {
+  const { notify } = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -100,35 +103,58 @@ export function PageExportButton() {
 
     async function loadClients() {
       setClientsLoading(true);
-      const result = await listExportClientsAction();
-      if (!mounted) {
-        return;
-      }
+      try {
+        const result = await runWithRetry(() => listExportClientsAction(), {
+          retries: 2,
+          baseDelayMs: 240
+        });
+        if (!mounted) {
+          return;
+        }
 
-      if (!result.ok) {
+        if (!result.ok) {
+          setClients([]);
+          setClientsLoading(false);
+          setError(result.error);
+          notify({
+            title: "Could not load clients",
+            description: result.error,
+            variant: "error"
+          });
+          return;
+        }
+
+        setClients(result.clients);
+        const idSet = new Set(result.clients.map((client) => client.id));
+
+        setSelectedClientIds((previous) => {
+          const kept = previous.filter((id) => idSet.has(id));
+          if (kept.length > 0) {
+            return kept;
+          }
+
+          if (clientId && idSet.has(clientId)) {
+            return [clientId];
+          }
+
+          return result.clients.slice(0, 2).map((client) => client.id);
+        });
+      } catch {
+        if (!mounted) {
+          return;
+        }
         setClients([]);
-        setClientsLoading(false);
-        setError(result.error);
-        return;
+        setError("Network error while loading client list.");
+        notify({
+          title: "Network issue",
+          description: "Could not load clients. Please retry.",
+          variant: "error"
+        });
+      } finally {
+        if (mounted) {
+          setClientsLoading(false);
+        }
       }
-
-      setClients(result.clients);
-      const idSet = new Set(result.clients.map((client) => client.id));
-
-      setSelectedClientIds((previous) => {
-        const kept = previous.filter((id) => idSet.has(id));
-        if (kept.length > 0) {
-          return kept;
-        }
-
-        if (clientId && idSet.has(clientId)) {
-          return [clientId];
-        }
-
-        return result.clients.slice(0, 2).map((client) => client.id);
-      });
-
-      setClientsLoading(false);
     }
 
     void loadClients();
@@ -136,7 +162,7 @@ export function PageExportButton() {
     return () => {
       mounted = false;
     };
-  }, [open, clientId]);
+  }, [open, clientId, notify]);
 
   function toggleClient(clientEntryId: string) {
     setSelectedClientIds((previous) => {
@@ -160,43 +186,82 @@ export function PageExportButton() {
     setLastSuccess(null);
 
     startTransition(async () => {
-      if (exportMode === "bulk") {
-        if (selectedClientIds.length < 2) {
-          setError("Select at least two clients for bulk export.");
+      try {
+        if (exportMode === "bulk") {
+          if (selectedClientIds.length < 2) {
+            setError("Select at least two clients for bulk export.");
+            return;
+          }
+
+          const bulkResult = await runWithRetry(
+            () =>
+              requestBulkDataExportAction({
+                format: selectedFormat,
+                scope: activeScope.scope,
+                clientIds: selectedClientIds
+              }),
+            { retries: 2, baseDelayMs: 260 }
+          );
+
+          if (!bulkResult.ok) {
+            setError(bulkResult.error);
+            notify({
+              title: "Export failed",
+              description: bulkResult.error,
+              variant: "error"
+            });
+            return;
+          }
+
+          triggerDownload(bulkResult.fileName, bulkResult.mimeType, bulkResult.contentBase64);
+          const successMessage = `${bulkResult.rowCount} rows exported across ${selectedClientIds.length} clients.`;
+          setLastSuccess(successMessage);
+          notify({
+            title: "Export ready",
+            description: successMessage,
+            variant: "success"
+          });
+          setOpen(false);
           return;
         }
 
-        const bulkResult = await requestBulkDataExportAction({
-          format: selectedFormat,
-          scope: activeScope.scope,
-          clientIds: selectedClientIds
+        const result = await runWithRetry(
+          () =>
+            requestDataExportAction({
+              format: selectedFormat,
+              scope: activeScope.scope,
+              clientId: clientId ?? null
+            }),
+          { retries: 2, baseDelayMs: 260 }
+        );
+
+        if (!result.ok) {
+          setError(result.error);
+          notify({
+            title: "Export failed",
+            description: result.error,
+            variant: "error"
+          });
+          return;
+        }
+
+        triggerDownload(result.fileName, result.mimeType, result.contentBase64);
+        const successMessage = `${result.rowCount} row exported.`;
+        setLastSuccess(successMessage);
+        notify({
+          title: "Export ready",
+          description: successMessage,
+          variant: "success"
         });
-
-        if (!bulkResult.ok) {
-          setError(bulkResult.error);
-          return;
-        }
-
-        triggerDownload(bulkResult.fileName, bulkResult.mimeType, bulkResult.contentBase64);
-        setLastSuccess(`${bulkResult.rowCount} rows exported across ${selectedClientIds.length} clients.`);
         setOpen(false);
-        return;
+      } catch {
+        setError("Network error while preparing export.");
+        notify({
+          title: "Network issue",
+          description: "Request failed after retry attempts.",
+          variant: "error"
+        });
       }
-
-      const result = await requestDataExportAction({
-        format: selectedFormat,
-        scope: activeScope.scope,
-        clientId: clientId ?? null
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      triggerDownload(result.fileName, result.mimeType, result.contentBase64);
-      setLastSuccess(`${result.rowCount} row exported.`);
-      setOpen(false);
     });
   }
 

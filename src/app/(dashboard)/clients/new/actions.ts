@@ -9,10 +9,17 @@ import { newClientSchema } from "@/app/(dashboard)/clients/new/schema";
 
 export type NewClientFormState = {
   error: string | null;
+  fieldErrors?: {
+    name?: string;
+    domain?: string;
+    industry?: string;
+    platformSlugs?: string;
+  };
 };
 
 export const initialNewClientFormState: NewClientFormState = {
-  error: null
+  error: null,
+  fieldErrors: {}
 };
 
 function normalizeDomain(input: string): string | null {
@@ -40,7 +47,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
   if (!accessToken) {
     return {
-      error: "Session not found. Please sign in again."
+      error: "Session not found. Please sign in again.",
+      fieldErrors: {}
     };
   }
 
@@ -57,8 +65,15 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
   });
 
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
-      error: parsed.error.issues[0]?.message ?? "Form validation failed."
+      error: parsed.error.issues[0]?.message ?? "Form validation failed.",
+      fieldErrors: {
+        name: fieldErrors.name?.[0],
+        domain: fieldErrors.domain?.[0],
+        industry: fieldErrors.industry?.[0],
+        platformSlugs: fieldErrors.platformSlugs?.[0]
+      }
     };
   }
 
@@ -69,7 +84,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
 
   if (!user) {
     return {
-      error: "User session could not be validated."
+      error: "User session could not be validated.",
+      fieldErrors: {}
     };
   }
 
@@ -81,7 +97,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
 
   if (userProfileError || !userProfile?.agency_id) {
     return {
-      error: "Agency information not found."
+      error: "Agency information not found.",
+      fieldErrors: {}
     };
   }
 
@@ -90,7 +107,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
   if (logoFile instanceof File && logoFile.size > 0) {
     if (!logoFile.type.startsWith("image/")) {
       return {
-        error: "Logo file must be a valid image."
+        error: "Logo file must be a valid image.",
+        fieldErrors: {}
       };
     }
 
@@ -104,7 +122,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
 
     if (uploadError) {
       return {
-        error: "Logo upload failed. Check storage settings."
+        error: "Logo upload failed. Check storage settings.",
+        fieldErrors: {}
       };
     }
 
@@ -123,7 +142,8 @@ export async function createClientAction(_prevState: NewClientFormState, formDat
 
   if (insertError) {
     return {
-      error: insertError.message
+      error: insertError.message,
+      fieldErrors: {}
     };
   }
 
