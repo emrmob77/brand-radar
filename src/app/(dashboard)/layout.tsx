@@ -55,18 +55,25 @@ async function getAgencyBranding(accessToken: string | null, agencyId: string | 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value ?? null;
+
+  if (!accessToken) {
+    redirect("/login");
+  }
+
   const currentUser = await getCurrentUser(accessToken);
+  if (!currentUser) {
+    redirect("/login");
+  }
+
   const [clients, branding] = await Promise.all([
     getDashboardClients(accessToken),
-    getAgencyBranding(accessToken, currentUser?.agencyId ?? null)
+    getAgencyBranding(accessToken, currentUser.agencyId)
   ]);
-  const shouldStartOnboarding = Boolean(currentUser)
-    ? shouldRunOnboarding({
-        onboardingCompletedAt: currentUser?.onboardingCompletedAt ?? null,
-        onboardingSkippedAt: currentUser?.onboardingSkippedAt ?? null,
-        clientCount: clients.length
-      })
-    : false;
+  const shouldStartOnboarding = shouldRunOnboarding({
+    onboardingCompletedAt: currentUser.onboardingCompletedAt ?? null,
+    onboardingSkippedAt: currentUser.onboardingSkippedAt ?? null,
+    clientCount: clients.length
+  });
 
   if (shouldStartOnboarding) {
     redirect("/activation");
