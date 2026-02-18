@@ -6,6 +6,7 @@ export type NavIcon =
   | "optimizations"
   | "trends"
   | "clients"
+  | "citations"
   | "forensics"
   | "alerts"
   | "hallucinations"
@@ -26,6 +27,7 @@ export const mainNavigation: NavItem[] = [
   { href: "/optimizations", label: "Optimizations", icon: "optimizations", hint: "Action board" },
   { href: "/trends", label: "Historical Trends", icon: "trends", hint: "Time analysis" },
   { href: "/clients", label: "Clients", icon: "clients", hint: "Portfolio health" },
+  { href: "/citations", label: "Citations", icon: "citations", hint: "Route alias" },
   { href: "/forensics", label: "Citation Forensics", icon: "forensics", hint: "Source quality" }
 ];
 

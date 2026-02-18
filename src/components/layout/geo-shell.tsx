@@ -34,6 +34,7 @@ const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
   optimizations: Sparkles,
   trends: CalendarRange,
   clients: Users,
+  citations: FileSearch,
   forensics: FileSearch,
   alerts: Bell,
   hallucinations: AlertTriangle,
