@@ -8,11 +8,11 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { MentionAnalytics, MentionRecord } from "@/app/(dashboard)/actions/mentions";
 import { FilterChips, type FilterChipItem } from "@/components/filters/filter-chips";
 import { SentimentGauge } from "@/components/mentions/sentiment-gauge";
+import { deriveMentionRisk, type MentionRiskLevel } from "@/lib/mentions/realtime";
 import { cn } from "@/lib/utils";
 
 type SortField = "platform" | "sentiment" | "detectedAt" | "query";
 type SortDirection = "asc" | "desc";
-type MentionRiskLevel = "low" | "medium" | "high" | "critical";
 type RiskFilter = "all" | MentionRiskLevel;
 type DatePreset = "all" | "7d" | "30d" | "90d" | "custom";
 
@@ -46,16 +46,6 @@ function endOfDay(input: Date) {
   const next = new Date(input);
   next.setHours(23, 59, 59, 999);
   return next.getTime();
-}
-
-function deriveRisk(row: MentionRecord): MentionRiskLevel {
-  const fallbackScore = row.sentiment === "positive" ? 0.45 : row.sentiment === "neutral" ? 0 : -0.45;
-  const score = typeof row.sentimentScore === "number" ? row.sentimentScore : fallbackScore;
-
-  if (score <= -0.65) return "critical";
-  if (score <= -0.35 || row.sentiment === "negative") return "high";
-  if (score <= 0.2) return "medium";
-  return "low";
 }
 
 export function MentionsAnalytics({ accessToken, analytics, clientId, rows }: MentionsAnalyticsProps) {
@@ -110,7 +100,7 @@ export function MentionsAnalytics({ accessToken, analytics, clientId, rows }: Me
     return liveRows.filter((row) => {
       const sentimentMatch = sentimentFilter === "all" ? true : row.sentiment === sentimentFilter;
       const platformMatch = platformFilter === "all" ? true : row.platform === platformFilter;
-      const riskMatch = riskFilter === "all" ? true : deriveRisk(row) === riskFilter;
+      const riskMatch = riskFilter === "all" ? true : deriveMentionRisk(row) === riskFilter;
 
       let dateMatch = true;
       const detectedTime = Date.parse(row.detectedAt);
@@ -505,7 +495,7 @@ export function MentionsAnalytics({ accessToken, analytics, clientId, rows }: Me
               <p className="rounded-xl border border-surface-border bg-white px-3 py-4 text-sm text-text-secondary">No mention matches these filters.</p>
             ) : (
               pagedRows.map((row) => {
-                const riskLevel = deriveRisk(row);
+                const riskLevel = deriveMentionRisk(row);
                 return (
                   <article className="rounded-xl border border-surface-border bg-white p-3" key={row.id}>
                     <div className="flex items-center justify-between gap-2">
@@ -563,7 +553,7 @@ export function MentionsAnalytics({ accessToken, analytics, clientId, rows }: Me
                   </tr>
                 ) : (
                   pagedRows.map((row) => {
-                    const riskLevel = deriveRisk(row);
+                    const riskLevel = deriveMentionRisk(row);
                     return (
                       <tr className="border-b border-surface-border/70" key={row.id}>
                         <td className="px-2 py-3 font-semibold text-ink">{row.platform}</td>

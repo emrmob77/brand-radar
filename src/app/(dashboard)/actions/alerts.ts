@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { evaluateCondition, severityForRule, type MetricSnapshot } from "@/lib/alerts/evaluation";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -89,11 +90,6 @@ const fallbackRules: AlertRuleItem[] = [
   }
 ];
 
-type MetricSnapshot = {
-  current: number;
-  previous: number;
-};
-
 function mapAlert(row: {
   id: string;
   title: string;
@@ -142,35 +138,6 @@ function buildFallbackPayload(): AlertsPagePayload {
     rules: fallbackRules,
     unreadCount: fallbackAlerts.filter((alert) => !alert.read).length
   };
-}
-
-function evaluateCondition(snapshot: MetricSnapshot, condition: AlertRuleCondition, threshold: number) {
-  if (condition === "above") return snapshot.current > threshold;
-  if (condition === "below") return snapshot.current < threshold;
-  if (condition === "equals") return Math.abs(snapshot.current - threshold) < 0.001;
-
-  const percentChange =
-    snapshot.previous === 0
-      ? snapshot.current > 0
-        ? 100
-        : 0
-      : ((snapshot.current - snapshot.previous) / Math.abs(snapshot.previous)) * 100;
-  return Math.abs(percentChange) >= threshold;
-}
-
-function severityForRule(rule: AlertRuleItem, snapshot: MetricSnapshot): AlertSeverity {
-  if (rule.metric === "hallucinations") return "critical";
-  if (rule.metric === "sentiment" && snapshot.current < 0) return "critical";
-
-  const delta =
-    snapshot.previous === 0
-      ? snapshot.current > 0
-        ? 100
-        : 0
-      : Math.abs(((snapshot.current - snapshot.previous) / Math.abs(snapshot.previous)) * 100);
-  if (delta >= 50) return "critical";
-  if (delta >= 20) return "warning";
-  return "info";
 }
 
 async function metricSnapshot(

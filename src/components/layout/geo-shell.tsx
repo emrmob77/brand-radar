@@ -7,6 +7,7 @@ import {
   CalendarRange,
   ChartNoAxesCombined,
   ChevronDown,
+  CircleHelp,
   FileSearch,
   Gauge,
   LayoutDashboard,
@@ -24,6 +25,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationBell } from "@/components/alerts/notification-bell";
 import { PageExportButton } from "@/components/export/page-export-button";
+import { HelpTooltip } from "@/components/help/help-tooltip";
 import { BrandingProvider, type BrandingConfig, useBranding } from "@/components/providers/branding-provider";
 import { GlobalSearch } from "@/components/search/global-search";
 import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
@@ -253,6 +255,7 @@ function AppShellFrame({ children, hideSidebar = false, clients = [], accessToke
     });
   }, [availableClients, clientQuery]);
   const profileHref = selectedClient?.id ? `/settings/profile?clientId=${encodeURIComponent(selectedClient.id)}` : "/settings/profile";
+  const helpHref = selectedClient?.id ? `/help?clientId=${encodeURIComponent(selectedClient.id)}` : "/help";
 
   useEffect(() => {
     if (!shouldShowSidebar || availableClients.length === 0) {
@@ -454,6 +457,13 @@ function AppShellFrame({ children, hideSidebar = false, clients = [], accessToke
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                aria-label="Help center"
+                className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-surface-border bg-white text-text-secondary hover:text-ink"
+                href={helpHref}
+              >
+                <CircleHelp className="h-4 w-4" />
+              </Link>
               <NotificationBell accessToken={accessToken} clientId={selectedClient?.id ?? null} />
               <button className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft" type="button">
                 <CalendarRange className="h-3.5 w-3.5 text-text-secondary" />
@@ -502,7 +512,10 @@ export function DashboardHeader({ title, description, actions }: DashboardHeader
   return (
     <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">{branding.companyName} Intelligence</p>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">{branding.companyName} Intelligence</p>
+          <HelpTooltip text="Use the '?' icon in the top header to open help docs for setup, workflows, and troubleshooting." />
+        </div>
         <h1 className="mt-2 text-[1.9rem] font-semibold leading-tight text-ink md:text-[2.4rem]">{title}</h1>
         {description ? <p className="mt-2 text-sm leading-relaxed text-text-secondary">{description}</p> : null}
       </div>

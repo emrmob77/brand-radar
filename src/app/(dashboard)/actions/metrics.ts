@@ -3,6 +3,15 @@
 import { subDays } from "date-fns";
 import { cookies } from "next/headers";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
+import {
+  buildSparkline,
+  calculateAISoV,
+  calculateEstimatedTrafficValue,
+  calculateSentimentHealth,
+  percentageChange,
+  signedInteger,
+  signedNumber
+} from "@/lib/metrics/calculations";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type MetricSnapshot = {
@@ -21,38 +30,6 @@ export type DashboardMetricCard = {
   description: string;
   sparkline: number[];
 };
-
-function percentageChange(current: number, previous: number) {
-  if (previous === 0) return current === 0 ? 0 : 100;
-  return ((current - previous) / Math.abs(previous)) * 100;
-}
-
-function signedNumber(value: number, digits = 1) {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value.toFixed(digits)}`;
-}
-
-function signedInteger(value: number) {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${Math.round(value)}`;
-}
-
-function calculateAISoV(clientMentions: number, totalMentions: number) {
-  if (totalMentions === 0) return 0;
-  return (clientMentions / totalMentions) * 100;
-}
-
-function calculateSentimentHealth(sentimentScores: Array<number | null>) {
-  const validScores = sentimentScores.filter((score): score is number => typeof score === "number");
-  if (validScores.length === 0) return 0;
-  const average = validScores.reduce((sum, value) => sum + value, 0) / validScores.length;
-  return ((average + 1) / 2) * 100;
-}
-
-function calculateEstimatedTrafficValue(authorityScores: Array<number | null>) {
-  const highAuthorityCount = authorityScores.filter((score): score is number => typeof score === "number" && score >= 70).length;
-  return highAuthorityCount * 5;
-}
 
 async function getWindowSnapshot(clientId: string | null, fromISO: string, toISO: string): Promise<MetricSnapshot> {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
@@ -105,12 +82,6 @@ async function getWindowSnapshot(clientId: string | null, fromISO: string, toISO
     sentimentHealth: calculateSentimentHealth(mentions.map((mention) => mention.sentiment_score)),
     estimatedTrafficValue: calculateEstimatedTrafficValue(citations.map((citation) => citation.authority_score))
   };
-}
-
-function buildSparkline(current: number, previous: number) {
-  const midOne = previous + (current - previous) * 0.35;
-  const midTwo = previous + (current - previous) * 0.7;
-  return [previous, midOne, midTwo, current];
 }
 
 export async function getDashboardMetricCards(clientId: string | null): Promise<DashboardMetricCard[]> {
@@ -167,4 +138,3 @@ export async function getDashboardMetricCards(clientId: string | null): Promise<
     }
   ];
 }
-

@@ -31,7 +31,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - ESLint, Prettier ve TypeScript strict modunu yapılandır
     - _Gereksinimler: 11.1, 11.2_
 
-- [ ] 2. Supabase veritabanı şeması ve kimlik doğrulama
+- [x] 2. Supabase veritabanı şeması ve kimlik doğrulama
   - [x] 2.1 Tüm tablolarla veritabanı şeması oluştur
     - agencies, users, clients, platforms, mentions, citations, competitors, queries, optimizations, hallucinations, alert_rules ve alerts tabloları için SQL migration yaz
     - Performans optimizasyonu için indeksler ekle
@@ -55,7 +55,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Platform ikonlarını ve meta verilerini ekle
     - _Gereksinimler: 3.1_
 
-- [ ] 3. Kimlik doğrulama sayfaları ve düzen
+- [x] 3. Kimlik doğrulama sayfaları ve düzen
   - [x] 3.1 Giriş sayfası oluştur
     - Email/password alanlarıyla giriş formu oluştur
     - React Hook Form + Zod kullanarak form doğrulaması uygula
@@ -69,7 +69,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Tailwind CSS ile stillendir
     - _Gereksinimler: 13.3_
 
-- [ ] 4. Dashboard düzeni ve navigasyon
+- [x] 4. Dashboard düzeni ve navigasyon
   - [x] 4.1 Kenar çubuğuyla dashboard düzeni oluştur
     - Navigasyon linkleriyle responsive kenar çubuğu oluştur
     - Mobil için daraltılabilir kenar çubuğu uygula
@@ -90,7 +90,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Tüm dashboard verilerini seçili müşteriye göre filtrele
     - _Gereksinimler: 1.4_
 
-- [ ] 5. Müşteri yönetimi
+- [x] 5. Müşteri yönetimi
   - [x] 5.1 Müşteri listesi sayfası oluştur
     - Sağlık göstergeleriyle tüm müşterileri getir ve göster
     - Logo, isim, sektör ve sağlık skoru ile müşteri kartları göster
@@ -111,7 +111,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Optimistic UI güncellemelerini işle
     - _Gereksinimler: 1.6_
 
-- [ ] 6. Dashboard metrikleri ve genel bakış
+- [x] 6. Dashboard metrikleri ve genel bakış
   - [x] 6.1 MetricCard bileşeni oluştur
     - Başlık, değer ve değişim göstergesiyle yeniden kullanılabilir metrik kartı oluştur
     - Framer Motion kullanarak animasyonlu sayı geçişleri ekle
@@ -139,7 +139,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Yeni bahsetmeler için otomatik kaydırma animasyonu ekle
     - _Gereksinimler: 2.3, 2.6_
 
-- [ ] 7. AI Platform Görünürlük Takibi
+- [x] 7. AI Platform Görünürlük Takibi
   - [x] 7.1 AI Görünürlük sayfası oluştur
     - Platform görünürlük kartlarıyla sayfa düzeni oluştur
     - Platform başına görünürlük verilerini getir
@@ -159,7 +159,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - En iyi platformlar için görsel vurgulama ekle
     - _Gereksinimler: 3.4_
 
-- [ ] 8. Marka Bahsetmeleri ve Duygu Analizi
+- [x] 8. Marka Bahsetmeleri ve Duygu Analizi
   - [x] 8.1 Marka Bahsetmeleri sayfası oluştur
     - Duygu dağılımıyla sayfa düzeni oluştur
     - Toplam bahsetme sayısını ve duygu dağılımını göster
@@ -185,7 +185,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Yeni bahsetmeler için bildirim ekle
     - _Gereksinimler: 4.3_
 
-- [ ] 9. Rakip Analizi
+- [x] 9. Rakip Analizi
   - [x] 9.1 Rakip Analizi sayfası oluştur
     - Rakip listesiyle sayfa düzeni oluştur
     - "Rakip Ekle" butonu ekle
@@ -217,7 +217,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Sorgu kategorisine göre filtreleme ekle
     - _Gereksinimler: 5.6_
 
-- [ ] 10. Alıntı Adli Tıbbı
+- [x] 10. Alıntı Adli Tıbbı
   - [x] 10.1 Alıntı Adli Tıbbı sayfası oluştur
     - Alıntı metrikleriyle sayfa düzeni oluştur
     - En çok alıntılanan sayfaları sıralı listede göster
@@ -242,7 +242,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Fırsat skorlaması ekle
     - _Gereksinimler: 6.5_
 
-- [ ] 11. İçerik Optimizasyonları
+- [x] 11. İçerik Optimizasyonları
   - [x] 11.1 İçerik Optimizasyonları sayfası oluştur
     - Kanban panosuyla sayfa düzeni oluştur
     - Üç sütunda optimizasyon kartları göster (Yapılacak, Devam Ediyor, Tamamlandı)
@@ -273,7 +273,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Öncelik göstergelerini ekle
     - _Gereksinimler: 7.5_
 
-- [ ] 12. Halüsinasyon Tespiti
+- [x] 12. Halüsinasyon Tespiti
   - [x] 12.1 Halüsinasyon Tespiti sayfası oluştur
     - Halüsinasyon listesiyle sayfa düzeni oluştur
     - Halüsinasyonları risk seviyesine göre sıralı göster
@@ -304,7 +304,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Düzeltme tarihini ve notları takip et
     - _Gereksinimler: 8.5_
 
-- [ ] 13. Uyarılar ve Bildirimler
+- [x] 13. Uyarılar ve Bildirimler
   - [x] 13.1 Uyarılar sayfası oluştur
     - Uyarı listesiyle sayfa düzeni oluştur
     - Uyarıları tarihe göre sıralı göster
@@ -332,7 +332,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Yeni uyarılar için gerçek zamanlı güncellemeler ekle
     - _Gereksinimler: 9.3, 9.5_
 
-- [ ] 14. Tarihsel Trend Analizi
+- [x] 14. Tarihsel Trend Analizi
   - [x] 14.1 Tarihsel Trendler sayfası oluştur
     - Takvim ısı haritasıyla sayfa düzeni oluştur
     - Son 90 günün verilerini getir
@@ -538,110 +538,110 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Dokunmatik cihazlarda test et
     - _Gereksinimler: 17.3_
 
-- [ ] 22. Onboarding ve Yardım
-  - [ ] 22.1 Onboarding sihirbazı oluştur
+- [x] 22. Onboarding ve Yardım
+  - [x] 22.1 Onboarding sihirbazı oluştur
     - İlk kez kullanan kullanıcılar için çok adımlı sihirbaz oluştur
     - Register sonrası ajans ve kullanıcı profilinin ilk kurulum adımlarını onboarding akışına dahil et
     - Müşteri ekleme, platform yapılandırma ve ilk sorgu ekleme adımlarını dahil et
     - İlerleme göstergesi ekle
     - _Gereksinimler: 19.1, 19.2_
   
-  - [ ] 22.2 Bağlamsal yardım tooltip'leri ekle
+  - [x] 22.2 Bağlamsal yardım tooltip'leri ekle
     - Tooltip bileşeni oluştur
     - UI boyunca yardım ikonları ekle
     - Hover'da bağlamsal yardım göster
     - _Gereksinimler: 19.3_
   
-  - [ ] 22.3 Yardım dokümantasyonu oluştur
+  - [x] 22.3 Yardım dokümantasyonu oluştur
     - Yardım dokümantasyon sayfaları oluştur
     - Dokümantasyona bağlanan "?" ikonu ekle
     - Özellik alanına göre düzenle
     - _Gereksinimler: 19.4_
   
-  - [ ] 22.4 Onboarding atlama seçeneği ekle
+  - [x] 22.4 Onboarding atlama seçeneği ekle
     - Kullanıcıların onboarding'i atlamasına izin ver
     - Tamamlama veya atlamadan sonra dashboard'a yönlendir
     - Onboarding tamamlanma durumunu sakla
     - _Gereksinimler: 19.5, 19.6_
 
-- [ ] 23. API ve Webhook'lar
-  - [ ] 23.1 RESTful API endpoint'leri oluştur
+- [x] 23. API ve Webhook'lar
+  - [x] 23.1 RESTful API endpoint'leri oluştur
     - Harici entegrasyonlar için API rotaları oluştur
     - Ana varlıklar için CRUD işlemlerini uygula
     - API dokümantasyonu ekle
     - _Gereksinimler: 20.1_
   
-  - [ ] 23.2 API kimlik doğrulaması uygula
+  - [x] 23.2 API kimlik doğrulaması uygula
     - API anahtarı oluşturma ve yönetimi oluştur
     - API anahtarı doğrulama middleware'i ekle
     - API anahtarlarını güvenli şekilde sakla
     - _Gereksinimler: 20.2_
   
-  - [ ] 23.3 API hız sınırlaması ekle
+  - [x] 23.3 API hız sınırlaması ekle
     - Hız sınırlaması uygula (dakikada 100 istek)
     - Limit aşıldığında 429 durum kodu döndür
     - Retry-after başlığı ekle
     - _Gereksinimler: 20.3, 20.4_
   
-  - [ ] 23.4 Webhook endpoint'i oluştur
+  - [x] 23.4 Webhook endpoint'i oluştur
     - AI izleme servisi için webhook işleyicisi oluştur
     - Webhook imzalarını doğrula
     - Bahsetme ve alıntı verilerini işle
     - Gerçek zamanlı güncellemeleri tetikle
     - _Gereksinimler: 20.5_
   
-  - [ ] 23.5 OpenAPI dokümantasyonu oluştur
+  - [x] 23.5 OpenAPI dokümantasyonu oluştur
     - OpenAPI/Swagger spesifikasyonu oluştur
     - Tüm API endpoint'lerini belgele
     - İstek/yanıt örnekleri ekle
     - Dokümantasyon sayfasını yayınla
     - _Gereksinimler: 20.6_
 
-- [ ] 24. Test ve Kalite Güvencesi
-  - [ ]* 24.1 Yardımcı fonksiyonlar için birim testleri yaz
+- [x] 24. Test ve Kalite Güvencesi
+  - [x]* 24.1 Yardımcı fonksiyonlar için birim testleri yaz
     - Metrik hesaplama fonksiyonlarını test et (AI SoV, duygu, sağlık skoru, trafik değeri)
     - Veri dönüştürme fonksiyonlarını test et
     - Doğrulama şemalarını test et
     - _Gereksinimler: Tümü_
   
-  - [ ]* 24.2 Server Action'lar için entegrasyon testleri yaz
+  - [x]* 24.2 Server Action'lar için entegrasyon testleri yaz
     - Müşteri CRUD işlemlerini test et
     - Bahsetme ve alıntı işlemlerini test et
     - Uyarı kuralı kontrolünü test et
     - _Gereksinimler: Tümü_
   
-  - [ ]* 24.3 Bileşen testleri yaz
+  - [x]* 24.3 Bileşen testleri yaz
     - Doğrulamalı form bileşenlerini test et
     - Mock veriyle grafik bileşenlerini test et
     - Gerçek zamanlı abonelik bileşenlerini test et
     - _Gereksinimler: Tümü_
   
-  - [ ]* 24.4 Uçtan uca test gerçekleştir
+  - [x]* 24.4 Uçtan uca test gerçekleştir
     - Tam kullanıcı akışlarını test et (giriş, müşteri ekleme, dashboard görüntüleme)
     - Çok kullanıcılı senaryoları test et
     - Gerçek zamanlı güncellemeleri test et
     - _Gereksinimler: Tümü_
 
-- [ ] 25. Deployment ve Üretim Kurulumu
-  - [ ] 25.1 Üretim ortamını yapılandır
+- [x] 25. Deployment ve Üretim Kurulumu
+  - [x] 25.1 Üretim ortamını yapılandır
     - Üretim Supabase projesini ayarla
     - Ortam değişkenlerini yapılandır
     - Özel domain ayarla
     - _Gereksinimler: 13.4_
   
-  - [ ] 25.2 Üretim için build'i optimize et
+  - [x] 25.2 Üretim için build'i optimize et
     - Next.js üretim optimizasyonlarını etkinleştir
     - Görsel optimizasyonunu yapılandır
     - Statik varlıklar için CDN ayarla
     - _Gereksinimler: 15.1_
   
-  - [ ] 25.3 İzleme ve günlükleme ayarla
+  - [x] 25.3 İzleme ve günlükleme ayarla
     - Hata takip servisini entegre et
     - Performans izlemeyi ayarla
     - Günlük toplama yapılandır
     - _Gereksinimler: 16.6_
   
-  - [ ] 25.4 Deployment dokümantasyonu oluştur
+  - [x] 25.4 Deployment dokümantasyonu oluştur
     - Deployment sürecini belgele
     - Ortam değişkeni referansı ekle
     - Sorun giderme kılavuzu dahil et

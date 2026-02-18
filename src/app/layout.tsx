@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { TelemetryBeacon } from "@/components/providers/telemetry-beacon";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import "./globals.css";
 
@@ -17,7 +18,10 @@ export default function RootLayout({
     <html lang="tr">
       <body className="font-display text-ink">
         <QueryProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <TelemetryBeacon />
+            {children}
+          </ToastProvider>
         </QueryProvider>
       </body>
     </html>

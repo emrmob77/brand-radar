@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { AppShell } from "@/components/layout/geo-shell";
 import type { BrandingConfig } from "@/components/providers/branding-provider";
+import { shouldRunOnboarding } from "@/lib/onboarding/flow";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const defaultBranding: BrandingConfig = {
@@ -58,6 +60,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getDashboardClients(accessToken),
     getAgencyBranding(accessToken, currentUser?.agencyId ?? null)
   ]);
+  const shouldStartOnboarding = Boolean(currentUser)
+    ? shouldRunOnboarding({
+        onboardingCompletedAt: currentUser?.onboardingCompletedAt ?? null,
+        onboardingSkippedAt: currentUser?.onboardingSkippedAt ?? null,
+        clientCount: clients.length
+      })
+    : false;
+
+  if (shouldStartOnboarding) {
+    redirect("/activation");
+  }
 
   return (
     <AppShell accessToken={accessToken} branding={branding} clients={clients}>

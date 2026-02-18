@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useRef, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { selectVisibleTrendData } from "@/lib/dashboard/visibility-zoom";
 import { cn } from "@/lib/utils";
 import type { VisibilityTrendPayload } from "@/app/(dashboard)/actions/visibility-trend";
 
@@ -15,14 +16,7 @@ function VisibilityTrendComponent({ payload }: VisibilityTrendProps) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(allSlugs);
   const [zoomLevel, setZoomLevel] = useState<1 | 2 | 3>(1);
 
-  const visibleData = useMemo(() => {
-    if (payload.data.length === 0) {
-      return payload.data;
-    }
-
-    const sliceSize = Math.max(8, Math.ceil(payload.data.length / zoomLevel));
-    return payload.data.slice(-sliceSize);
-  }, [payload.data, zoomLevel]);
+  const visibleData = useMemo(() => selectVisibleTrendData(payload.data, zoomLevel), [payload.data, zoomLevel]);
 
   function touchDistance(touches: React.TouchList) {
     const first = touches[0];

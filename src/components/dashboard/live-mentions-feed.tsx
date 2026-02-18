@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getMentionFeedPage, type MentionFeedRow } from "@/app/(dashboard)/actions/mentions";
+import { mergeUniqueById } from "@/lib/mentions/realtime";
 import { queryKeys } from "@/lib/query/keys";
 
 type LiveMentionsFeedProps = {
@@ -21,21 +22,6 @@ function relativeTime(value: string) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
-}
-
-function mergeUniqueMentions(rows: MentionFeedRow[]) {
-  const seen = new Set<string>();
-  const output: MentionFeedRow[] = [];
-
-  for (const row of rows) {
-    if (seen.has(row.id)) {
-      continue;
-    }
-    seen.add(row.id);
-    output.push(row);
-  }
-
-  return output;
 }
 
 export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: LiveMentionsFeedProps) {
@@ -66,7 +52,7 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
     return feedQuery.data.pages.flatMap((page) => page.rows);
   }, [feedQuery.data, initialMentions]);
 
-  const mentions = useMemo(() => mergeUniqueMentions([...liveMentions, ...pagedMentions]), [liveMentions, pagedMentions]);
+  const mentions = useMemo(() => mergeUniqueById([...liveMentions, ...pagedMentions]), [liveMentions, pagedMentions]);
 
   const flushRealtimeMentions = useCallback(() => {
     flushTimerRef.current = null;
@@ -75,7 +61,7 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
     }
 
     const batch = pendingMentionsRef.current.splice(0);
-    setLiveMentions((prev) => mergeUniqueMentions([...batch, ...prev]).slice(0, 80));
+    setLiveMentions((prev) => mergeUniqueById([...batch, ...prev]).slice(0, 80));
     setNewItemsCount((prev) => prev + batch.length);
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
