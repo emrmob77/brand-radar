@@ -22,7 +22,7 @@ export type NavItem = {
 };
 
 export const mainNavigation: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: "dashboard", hint: "Executive summary" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard", hint: "Executive summary" },
   { href: "/visibility", label: "AI Visibility", icon: "visibility", hint: "Platform share" },
   { href: "/mentions", label: "Brand Mentions", icon: "mentions", hint: "Live sentiment" },
   { href: "/competitors", label: "Competitors", icon: "competitors", hint: "Market pressure" },

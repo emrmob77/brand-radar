@@ -40,7 +40,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           </button>
           <Link
             className="focus-ring inline-flex min-h-11 items-center rounded-xl border border-surface-border bg-white px-4 py-2 text-sm font-semibold text-ink hover:bg-brand-soft"
-            href="/"
+            href="/dashboard"
           >
             Go Dashboard
           </Link>

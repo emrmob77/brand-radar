@@ -129,6 +129,14 @@ function isPublicAuthRoute(pathname: string) {
   return pathname === "/login" || pathname === "/register";
 }
 
+function isPublicMarketingRoute(pathname: string) {
+  return pathname === "/" || pathname === "/pricing" || pathname === "/features" || pathname === "/contact" || pathname === "/about";
+}
+
+function isPublicApiRoute(pathname: string) {
+  return pathname.startsWith("/api/");
+}
+
 function isAdminOnlyPath(pathname: string) {
   return pathname === "/settings/users" || pathname.startsWith("/settings/users/") || pathname === "/settings/white-label" || pathname.startsWith("/settings/white-label/");
 }
@@ -185,7 +193,7 @@ async function fetchUserRole(accessToken: string): Promise<UserRole> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicPath(pathname)) {
+  if (isPublicPath(pathname) || isPublicMarketingRoute(pathname) || isPublicApiRoute(pathname)) {
     return NextResponse.next();
   }
 
@@ -225,7 +233,7 @@ export async function middleware(request: NextRequest) {
 
   if (authenticated && isAuthPageRoute) {
     const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/";
+    dashboardUrl.pathname = "/dashboard";
     dashboardUrl.search = "";
     const redirectResponse = NextResponse.redirect(dashboardUrl);
     copyCookies(response, redirectResponse);

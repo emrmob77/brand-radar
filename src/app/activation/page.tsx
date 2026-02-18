@@ -11,7 +11,7 @@ export default async function ActivationPage() {
   }
 
   if (initialData.onboardingDone) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   return (

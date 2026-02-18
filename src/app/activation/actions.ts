@@ -124,10 +124,10 @@ export async function skipOnboardingAction(): Promise<OnboardingActionResult> {
       return { ok: false, error: updateResult.error.message };
     }
 
-    revalidatePath("/", "layout");
+    revalidatePath("/dashboard", "layout");
     return {
       ok: true,
-      redirectTo: "/"
+      redirectTo: "/dashboard"
     };
   } catch (error) {
     await logServerError(error, { area: "activation/skip-onboarding" });
@@ -253,14 +253,14 @@ export async function completeOnboardingAction(input: z.infer<typeof onboardingS
       return { ok: false, error: onboardingUpdate.error.message };
     }
 
-    revalidatePath("/", "layout");
+    revalidatePath("/dashboard", "layout");
     revalidatePath("/clients");
     revalidatePath("/visibility");
     revalidatePath("/mentions");
 
     return {
       ok: true,
-      redirectTo: clientId ? `/?clientId=${encodeURIComponent(clientId)}` : "/"
+      redirectTo: clientId ? `/dashboard?clientId=${encodeURIComponent(clientId)}` : "/dashboard"
     };
   } catch (error) {
     await logServerError(error, { area: "activation/complete-onboarding" });

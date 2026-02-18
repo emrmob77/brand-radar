@@ -22,7 +22,7 @@ function resolveMessage(reason: string | undefined) {
 
 export default function ForbiddenPage({ searchParams }: ForbiddenPageProps) {
   const message = resolveMessage(searchParams?.reason);
-  const from = searchParams?.from ? decodeURIComponent(searchParams.from) : "/";
+  const from = searchParams?.from ? decodeURIComponent(searchParams.from) : "/dashboard";
 
   return (
     <div className="mx-auto w-full max-w-[1320px]">
@@ -35,7 +35,7 @@ export default function ForbiddenPage({ searchParams }: ForbiddenPageProps) {
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Link className="focus-ring rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600" href="/">
+          <Link className="focus-ring rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand-600" href="/dashboard">
             Go to Dashboard
           </Link>
           <Link className="focus-ring rounded-xl border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-brand-soft" href="/settings">
