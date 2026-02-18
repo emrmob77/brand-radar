@@ -10,8 +10,9 @@ import {
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 type RefreshedSession = ReturnType<typeof toAuthCookieSession>;
+type UserRole = "admin" | "editor" | "viewer" | null;
 
-function decodeJwtExpiry(token: string): number | null {
+function decodeJwtPayload(token: string): { exp?: number; sub?: string } | null {
   const segments = token.split(".");
   if (segments.length !== 3) {
     return null;
@@ -26,11 +27,15 @@ function decodeJwtExpiry(token: string): number | null {
   const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
 
   try {
-    const decodedPayload = JSON.parse(atob(padded)) as { exp?: number };
-    return typeof decodedPayload.exp === "number" ? decodedPayload.exp : null;
+    return JSON.parse(atob(padded)) as { exp?: number; sub?: string };
   } catch {
     return null;
   }
+}
+
+function decodeJwtExpiry(token: string): number | null {
+  const payload = decodeJwtPayload(token);
+  return typeof payload?.exp === "number" ? payload.exp : null;
 }
 
 function setSessionCookies(response: NextResponse, session: RefreshedSession) {
@@ -124,6 +129,59 @@ function isPublicAuthRoute(pathname: string) {
   return pathname === "/login" || pathname === "/register";
 }
 
+function isAdminOnlyPath(pathname: string) {
+  return pathname === "/settings/users" || pathname.startsWith("/settings/users/") || pathname === "/settings/white-label" || pathname.startsWith("/settings/white-label/");
+}
+
+function isWriteMethod(method: string) {
+  return method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+}
+
+function canViewerWrite(pathname: string) {
+  return pathname === "/auth/sign-out";
+}
+
+function forbiddenRedirect(request: NextRequest, reason: "admin_required" | "viewer_read_only") {
+  const forbiddenUrl = request.nextUrl.clone();
+  forbiddenUrl.pathname = "/forbidden";
+  forbiddenUrl.search = "";
+  forbiddenUrl.searchParams.set("reason", reason);
+  forbiddenUrl.searchParams.set("from", request.nextUrl.pathname);
+  return NextResponse.redirect(forbiddenUrl);
+}
+
+async function fetchUserRole(accessToken: string): Promise<UserRole> {
+  const payload = decodeJwtPayload(accessToken);
+  const userId = payload?.sub;
+  if (!userId) {
+    return null;
+  }
+
+  const { supabaseUrl, supabasePublishableKey } = getSupabaseEnv();
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/users?select=role&id=eq.${encodeURIComponent(userId)}&limit=1`,
+      {
+        headers: {
+          apikey: supabasePublishableKey,
+          Authorization: `Bearer ${accessToken}`
+        },
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as Array<{ role?: string }>;
+    const role = data[0]?.role;
+    return role === "admin" || role === "editor" || role === "viewer" ? role : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -172,6 +230,22 @@ export async function middleware(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(dashboardUrl);
     copyCookies(response, redirectResponse);
     return redirectResponse;
+  }
+
+  if (authenticated && accessToken && !isAuthPageRoute) {
+    const role = await fetchUserRole(accessToken);
+
+    if (isAdminOnlyPath(pathname) && role !== "admin") {
+      const redirectResponse = forbiddenRedirect(request, "admin_required");
+      copyCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+
+    if (role === "viewer" && isWriteMethod(request.method) && !canViewerWrite(pathname)) {
+      const redirectResponse = forbiddenRedirect(request, "viewer_read_only");
+      copyCookies(response, redirectResponse);
+      return redirectResponse;
+    }
   }
 
   return response;

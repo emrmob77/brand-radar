@@ -38,6 +38,8 @@ const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
   forensics: FileSearch,
   alerts: Bell,
   hallucinations: AlertTriangle,
+  team: Users,
+  white_label: Sparkles,
   settings: Settings
 };
 

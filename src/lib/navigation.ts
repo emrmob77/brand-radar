@@ -10,6 +10,8 @@ export type NavIcon =
   | "forensics"
   | "alerts"
   | "hallucinations"
+  | "team"
+  | "white_label"
   | "settings";
 
 export type NavItem = {
@@ -34,5 +36,7 @@ export const mainNavigation: NavItem[] = [
 export const systemNavigation: NavItem[] = [
   { href: "/alerts", label: "Alerts", icon: "alerts", hint: "Rule monitor" },
   { href: "/hallucinations", label: "Hallucinations", icon: "hallucinations", hint: "Risk control" },
+  { href: "/settings/users", label: "Team", icon: "team", hint: "User access" },
+  { href: "/settings/white-label", label: "White-Label", icon: "white_label", hint: "Brand identity" },
   { href: "/settings", label: "Settings", icon: "settings", hint: "Workspace config" }
 ];

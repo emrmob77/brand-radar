@@ -364,33 +364,33 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - _Gereksinimler: 12.6_
 
 - [ ] 15. Kullanıcı Yönetimi ve Yetkilendirme
-  - [ ] 15.1 Kullanıcı yönetimi sayfası oluştur (yalnızca admin)
+  - [x] 15.1 Kullanıcı yönetimi sayfası oluştur (yalnızca admin)
     - Ajanstaki tüm kullanıcıları listelemek için sayfa oluştur
     - Email, rol ve son giriş ile kullanıcı kartları göster
     - "Kullanıcı Davet Et" butonu ekle
     - _Gereksinimler: 10.2_
   
-  - [ ] 15.2 Kullanıcı davet formu oluştur
+  - [x] 15.2 Kullanıcı davet formu oluştur
     - Email, rol ve müşteri erişim izinleriyle form oluştur
     - Rol seçimi uygula (admin, editor, viewer)
     - Davet göndermek için Server Action oluştur
     - _Gereksinimler: 10.2_
   
-  - [ ] 15.3 Rol tabanlı erişim kontrolünü uygula
+  - [x] 15.3 Rol tabanlı erişim kontrolünü uygula
     - Kullanıcı izinlerini kontrol etmek için middleware oluştur
     - Viewer rolünü salt okunur erişimle kısıtla
     - Editor rolüne okuma ve düzenleme izni ver
     - Admin rolüne tam erişim ver
     - _Gereksinimler: 10.3, 10.4, 10.5_
   
-  - [ ] 15.4 İzin hatası işlemeyi ekle
+  - [x] 15.4 İzin hatası işlemeyi ekle
     - Yetkisiz erişim için hata sayfası oluştur
     - Yardımcı hata mesajı göster
     - Uygun sayfaya yönlendir
     - _Gereksinimler: 10.6_
 
 - [ ] 16. White-Label Yapılandırması
-  - [ ] 16.1 White-label formuyla Ayarlar sayfası oluştur
+  - [x] 16.1 White-label formuyla Ayarlar sayfası oluştur
     - Ajans logosu yükleme, birincil renk, ikincil renk ve şirket adıyla form oluştur
     - Renk seçici bileşenleri ekle
     - Form doğrulaması uygula
