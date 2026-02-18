@@ -74,7 +74,9 @@ Bu dokuman `brand-radar.html` dosyasini Next.js App Router yapisina tasimak icin
 
 ## Route Esleme (Prototip -> App Router)
 
-- `/` -> `src/app/(dashboard)/page.tsx`
+- `/` -> `src/app/(marketing)/page.tsx`
+- `/dashboard` -> `src/app/(dashboard)/dashboard/page.tsx`
+- `/prompts` -> `src/app/(dashboard)/prompts/page.tsx`
 - `/clients` -> `src/app/(dashboard)/clients/page.tsx`
 - `/visibility` -> `src/app/(dashboard)/visibility/page.tsx`
 - `/mentions` -> `src/app/(dashboard)/mentions/page.tsx`
@@ -84,7 +86,7 @@ Bu dokuman `brand-radar.html` dosyasini Next.js App Router yapisina tasimak icin
 - `/hallucinations` -> `src/app/(dashboard)/hallucinations/page.tsx`
 - `/settings` -> `src/app/(dashboard)/settings/page.tsx`
 - `/add-client` -> `src/app/(dashboard)/clients/new/page.tsx`
-- `/activation` -> onboarding akisi (gecici olarak auth grubunda tutulacak)
+- `/activation` -> onboarding akisi (`src/app/activation/page.tsx`)
 
 ## Responsive Notlari (Gereksinim 17.1)
 
@@ -92,4 +94,3 @@ Bu dokuman `brand-radar.html` dosyasini Next.js App Router yapisina tasimak icin
 - Tablet: `768px - 1919px`
 - Mobile: `320px - 767px`
 - Sidebar mobile'da off-canvas/hamburger davranisina alinacak.
-

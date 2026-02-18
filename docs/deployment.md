@@ -19,6 +19,9 @@ Production ortaminda asagidaki degiskenleri tanimla:
 - `RESEND_API_KEY`, `EMAIL_FROM`
 - `ERROR_LOG_WEBHOOK_URL`, `TELEMETRY_WEBHOOK_URL`
 - `WEBHOOK_SECRET`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (opsiyonel, varsayilan `gpt-4.1-mini`)
+- `OPENAI_WEB_MODEL` (opsiyonel, varsayilan `gpt-4.1`; web_search_preview destekleyen model onerilir)
 
 Referans: `.env.example`
 

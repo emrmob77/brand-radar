@@ -14,6 +14,8 @@ export type MentionRecord = {
   sentiment: "positive" | "neutral" | "negative";
   sentimentScore: number | null;
   detectedAt: string;
+  brandMentioned: boolean;
+  source: "prompt_run" | "mention";
 };
 
 export type MentionAnalytics = {
@@ -42,6 +44,15 @@ export type MentionFeedPage = {
   nextPage: number | null;
 };
 
+function buildAnalytics(rows: MentionRecord[]): MentionAnalytics {
+  return {
+    total: rows.length,
+    positive: rows.filter((row) => row.sentiment === "positive").length,
+    neutral: rows.filter((row) => row.sentiment === "neutral").length,
+    negative: rows.filter((row) => row.sentiment === "negative").length
+  };
+}
+
 function clampPageSize(value: number | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return 20;
@@ -60,43 +71,77 @@ export async function getMentionPayload(clientId: string | null): Promise<Mentio
 
   const supabase = createServerSupabaseClient(accessToken);
   const since = subDays(new Date(), 30).toISOString();
-  const mentionsBaseQuery = supabase
-    .from("mentions")
-    .select("id,query,content,sentiment,sentiment_score,detected_at,platforms(name,slug)")
+  const runsBaseQuery = supabase
+    .from("prompt_runs")
+    .select("id,answer,sentiment,sentiment_score,brand_mentioned,detected_at,platforms(name,slug),queries(text)")
     .gte("detected_at", since)
     .order("detected_at", { ascending: false })
-    .limit(200);
+    .limit(300);
+  const mentionsBaseQuery = supabase
+    .from("mentions")
+    .select("id,query,content,sentiment,sentiment_score,detected_at,metadata,platforms(name,slug)")
+    .gte("detected_at", since)
+    .order("detected_at", { ascending: false })
+    .limit(300);
 
-  const mentionsResult = clientId ? await mentionsBaseQuery.eq("client_id", clientId) : await mentionsBaseQuery;
-  if (!mentionsResult.data) {
-    return {
-      analytics: { total: 0, positive: 0, neutral: 0, negative: 0 },
-      rows: []
-    };
-  }
+  const [runsResult, mentionsResult] = await Promise.all([
+    clientId ? runsBaseQuery.eq("client_id", clientId) : runsBaseQuery,
+    clientId ? mentionsBaseQuery.eq("client_id", clientId) : mentionsBaseQuery
+  ]);
 
-  const rows: MentionRecord[] = mentionsResult.data.map((mention) => {
-    const platformRelation = Array.isArray(mention.platforms) ? mention.platforms[0] : mention.platforms;
+  const runRows: MentionRecord[] = (runsResult.data ?? []).map((run) => {
+    const platformRelation = Array.isArray(run.platforms) ? run.platforms[0] : run.platforms;
+    const queryRelation = Array.isArray(run.queries) ? run.queries[0] : run.queries;
     return {
-      id: String(mention.id),
+      id: String(run.id),
       platform: platformRelation?.name ?? "Unknown",
       platformSlug: platformRelation?.slug ?? "unknown",
-      query: mention.query,
-      content: mention.content,
-      sentiment: (mention.sentiment as MentionRecord["sentiment"]) ?? "neutral",
-      sentimentScore: mention.sentiment_score ?? null,
-      detectedAt: mention.detected_at
+      query: queryRelation?.text ?? "Unknown query",
+      content: run.answer,
+      sentiment: (run.sentiment as MentionRecord["sentiment"]) ?? "neutral",
+      sentimentScore: run.sentiment_score ?? null,
+      detectedAt: run.detected_at,
+      brandMentioned: run.brand_mentioned ?? false,
+      source: "prompt_run"
     };
   });
 
-  const analytics: MentionAnalytics = {
-    total: rows.length,
-    positive: rows.filter((row) => row.sentiment === "positive").length,
-    neutral: rows.filter((row) => row.sentiment === "neutral").length,
-    negative: rows.filter((row) => row.sentiment === "negative").length
-  };
+  const runIds = new Set(runRows.map((row) => row.id));
+  const mentionRows: MentionRecord[] = (mentionsResult.data ?? [])
+    .filter((mention) => {
+      const rawMetadata = mention.metadata;
+      if (!rawMetadata || typeof rawMetadata !== "object") {
+        return true;
+      }
 
-  return { analytics, rows };
+      const promptRunId = (rawMetadata as Record<string, unknown>).prompt_run_id;
+      if (typeof promptRunId !== "string") {
+        return true;
+      }
+
+      return !runIds.has(promptRunId);
+    })
+    .map((mention) => {
+      const platformRelation = Array.isArray(mention.platforms) ? mention.platforms[0] : mention.platforms;
+      return {
+        id: String(mention.id),
+        platform: platformRelation?.name ?? "Unknown",
+        platformSlug: platformRelation?.slug ?? "unknown",
+        query: mention.query,
+        content: mention.content,
+        sentiment: (mention.sentiment as MentionRecord["sentiment"]) ?? "neutral",
+        sentimentScore: mention.sentiment_score ?? null,
+        detectedAt: mention.detected_at,
+        brandMentioned: true,
+        source: "mention"
+      };
+    });
+
+  const rows = [...runRows, ...mentionRows]
+    .sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime())
+    .slice(0, 400);
+
+  return { analytics: buildAnalytics(rows), rows };
 }
 
 export async function getMentionFeedPage(input: {

@@ -59,7 +59,9 @@ async function getWindowSnapshot(clientId: string | null, fromISO: string, toISO
   const [mentionsResult, citationsResult, totalMentionsResult] = await Promise.all([
     clientId ? mentionsQuery.eq("client_id", clientId) : mentionsQuery,
     clientId ? citationsQuery.eq("client_id", clientId) : citationsQuery,
-    supabase.from("mentions").select("*", { count: "exact", head: true }).gte("detected_at", fromISO).lt("detected_at", toISO)
+    clientId
+      ? supabase.from("mentions").select("*", { count: "exact", head: true }).eq("client_id", clientId).gte("detected_at", fromISO).lt("detected_at", toISO)
+      : supabase.from("mentions").select("*", { count: "exact", head: true }).gte("detected_at", fromISO).lt("detected_at", toISO)
   ]);
 
   if (mentionsResult.error || citationsResult.error || totalMentionsResult.error) {

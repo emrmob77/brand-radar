@@ -73,20 +73,5 @@ export async function getVisibilityTrendPayload(clientId: string | null): Promis
     row[platformSlug] = ((row[platformSlug] as number | undefined) ?? 0) + 1;
   }
 
-  const data = Array.from(byDate.values());
-  if ((mentionsResult.data ?? []).length === 0 && activePlatforms.length > 0) {
-    return {
-      data: data.map((row, index) => {
-        const nextRow = { ...row } as VisibilityTrendPoint;
-        for (const platform of activePlatforms) {
-          const baseline = 8 + (index % 4);
-          nextRow[platform.slug] = baseline + (platform.slug.length % 5);
-        }
-        return nextRow;
-      }),
-      platforms: activePlatforms
-    };
-  }
-
-  return { data, platforms: activePlatforms };
+  return { data: Array.from(byDate.values()), platforms: activePlatforms };
 }

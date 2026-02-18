@@ -1,5 +1,6 @@
 export type NavIcon =
   | "dashboard"
+  | "prompts"
   | "visibility"
   | "mentions"
   | "competitors"
@@ -23,6 +24,7 @@ export type NavItem = {
 
 export const mainNavigation: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard", hint: "Executive summary" },
+  { href: "/prompts", label: "Prompts", icon: "prompts", hint: "Query control" },
   { href: "/visibility", label: "AI Visibility", icon: "visibility", hint: "Platform share" },
   { href: "/mentions", label: "Brand Mentions", icon: "mentions", hint: "Live sentiment" },
   { href: "/competitors", label: "Competitors", icon: "competitors", hint: "Market pressure" },

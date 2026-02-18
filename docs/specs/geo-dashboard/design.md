@@ -126,13 +126,21 @@ graph TB
 
 ```
 app/
+├── (marketing)/
+│   ├── layout.tsx                    # Marketing shell
+│   ├── page.tsx                      # Ana sayfa (landing)
+│   ├── pricing/page.tsx
+│   ├── features/page.tsx
+│   ├── about/page.tsx
+│   └── contact/page.tsx
 ├── (auth)/
 │   ├── login/
 │   │   └── page.tsx                 # Login sayfası
 │   └── layout.tsx                   # Auth layout (centered, no sidebar)
 ├── (dashboard)/
 │   ├── layout.tsx                   # Dashboard layout (sidebar, header)
-│   ├── page.tsx                     # Ana dashboard
+│   ├── dashboard/page.tsx           # Ana dashboard
+│   ├── prompts/page.tsx             # Prompt yönetimi + live run
 │   ├── clients/
 │   │   ├── page.tsx                 # Müşteri listesi
 │   │   ├── [clientId]/
@@ -164,10 +172,14 @@ app/
 │       └── white-label/
 │           └── page.tsx             # White-label config
 └── api/
-    ├── webhooks/
-    │   └── route.ts                 # Webhook endpoint
-    └── export/
-        └── route.ts                 # Data export endpoint
+    └── v1/
+        ├── webhooks/ai-monitoring/route.ts
+        ├── queries/route.ts
+        ├── queries/[id]/route.ts
+        ├── mentions/route.ts
+        ├── citations/route.ts
+        ├── clients/route.ts
+        └── api-keys/route.ts
 ```
 
 ### Core Component'ler
@@ -464,7 +476,7 @@ export async function markAlertAsRead(id: string): Promise<Result<void>>
 
 ### API Routes
 
-**Webhook Handler** (`app/api/webhooks/route.ts`):
+**Webhook Handler** (`app/api/v1/webhooks/ai-monitoring/route.ts`):
 ```typescript
 export async function POST(request: Request): Promise<Response>
 
@@ -475,7 +487,7 @@ export async function POST(request: Request): Promise<Response>
 // - Creates alerts if rules match
 ```
 
-**Export Handler** (`app/api/export/route.ts`):
+**Export Handler** (`app/(dashboard)/actions/exports.ts` + UI trigger):
 ```typescript
 export async function GET(request: Request): Promise<Response>
 
@@ -930,4 +942,3 @@ function calculateEstimatedTrafficValue(citations: Citation[]): number {
   return highAuthorityCitations.length * 5;
 }
 ```
-

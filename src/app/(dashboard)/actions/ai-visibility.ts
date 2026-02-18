@@ -141,24 +141,19 @@ export async function getPlatformTopicHeatmapPayload(clientId: string | null): P
     .sort((a, b) => b[1] - a[1])
     .map(([category]) => category)
     .slice(0, 8);
-  const fallbackTopics = ["Commercial EV", "Fleet TCO", "Charging Infra", "Sustainability", "Safety & Compliance"];
-  const activeTopics = topics.length > 0 ? topics : fallbackTopics;
-
-  const maxCount = Math.max(...counts.values(), 1);
-  const denominator = topics.length > 0 ? maxCount : 20;
+  const activeTopics = topics;
+  const denominator = Math.max(...counts.values(), 1);
   const cells: HeatmapCell[] = [];
 
   for (const topic of activeTopics) {
     for (const platform of platformsResult.data) {
       const count = counts.get(`${topic}::${platform.id}`) ?? 0;
-      const fallbackCount = topic.length + platform.slug.length;
-      const normalizedCount = topics.length > 0 ? count : fallbackCount;
 
       cells.push({
         topic,
         platformSlug: platform.slug,
-        count: normalizedCount,
-        value: Math.min(100, Math.round((normalizedCount / denominator) * 100))
+        count,
+        value: Math.min(100, Math.round((count / denominator) * 100))
       });
     }
   }

@@ -156,7 +156,7 @@ export function ClientList({ clients }: { clients: ClientRecord[] }) {
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <Link
                     className="focus-ring inline-flex w-full items-center justify-center rounded-xl border border-surface-border bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-brand-soft"
-                    href={`/?clientId=${encodeURIComponent(client.id)}`}
+                    href={`/dashboard?clientId=${encodeURIComponent(client.id)}`}
                   >
                     Open View
                   </Link>

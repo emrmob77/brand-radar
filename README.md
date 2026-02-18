@@ -20,6 +20,12 @@ Gerekli degiskenler:
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `WEBHOOK_SECRET`
+- `OPENAI_API_KEY` (live prompt execution)
+
+Opsiyonel model secimi:
+
+- `OPENAI_MODEL` (default: `gpt-4.1-mini`)
+- `OPENAI_WEB_MODEL` (default: `gpt-4.1`, web_search_preview destekleyen model)
 
 Opsiyonel white-label degiskenleri:
 

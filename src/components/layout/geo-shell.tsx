@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 const iconMap: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
+  prompts: Search,
   visibility: Gauge,
   mentions: Bot,
   competitors: ChartNoAxesCombined,
