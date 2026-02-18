@@ -17,9 +17,9 @@ const config: Config = {
     },
     extend: {
       colors: {
-        brand: "#171a20",
-        "brand-600": "#0f1115",
-        "brand-soft": "#f1f2f4",
+        brand: "rgb(var(--brand-primary-rgb) / <alpha-value>)",
+        "brand-600": "rgb(var(--brand-primary-dark-rgb) / <alpha-value>)",
+        "brand-soft": "rgb(var(--brand-soft-rgb) / <alpha-value>)",
         ink: "#111318",
         muted: "#5f6368",
         "background-dark": "#f5f5f6",
@@ -33,8 +33,9 @@ const config: Config = {
         success: "#1f7a43",
         healthy: "#10b981",
         attention: "#f59e0b",
-        primary: "#171a20",
-        "primary-dark": "#0f1115"
+        primary: "rgb(var(--brand-primary-rgb) / <alpha-value>)",
+        "primary-dark": "rgb(var(--brand-primary-dark-rgb) / <alpha-value>)",
+        secondary: "rgb(var(--brand-secondary-rgb) / <alpha-value>)"
       },
       fontFamily: {
         display: ["Manrope", "ui-sans-serif", "Segoe UI", "sans-serif"],

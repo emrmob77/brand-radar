@@ -23,6 +23,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationBell } from "@/components/alerts/notification-bell";
+import { PageExportButton } from "@/components/export/page-export-button";
+import { BrandingProvider, type BrandingConfig, useBranding } from "@/components/providers/branding-provider";
 import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +58,7 @@ type AppShellProps = {
   hideSidebar?: boolean;
   clients?: ClientSummary[];
   accessToken?: string | null;
+  branding?: BrandingConfig;
 };
 
 type DashboardHeaderProps = {
@@ -69,6 +72,13 @@ type NavigationGroupProps = {
   items: NavItem[];
   pathname: string;
   selectedClientId: string | null;
+};
+
+const fallbackBranding: BrandingConfig = {
+  companyName: "Brand Radar",
+  logoUrl: null,
+  primaryColor: "#171a20",
+  secondaryColor: "#2563eb"
 };
 
 function NavigationGroup({ title, items, pathname, selectedClientId }: NavigationGroupProps) {
@@ -122,16 +132,27 @@ function NavigationGroup({ title, items, pathname, selectedClientId }: Navigatio
 }
 
 function SidebarContent({ pathname, selectedClientId }: { pathname: string; selectedClientId: string | null }) {
+  const branding = useBranding();
+
   return (
     <div className="flex min-h-full flex-col bg-sidebar-bg">
       <div className="border-b border-surface-border px-4 py-4">
         <div className="rounded-2xl border border-surface-border bg-white p-3">
           <div className="flex items-center gap-2.5 md:justify-center xl:justify-start">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-white">
-              <ChartNoAxesCombined className="h-3.5 w-3.5" />
-            </div>
+            {branding.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt={`${branding.companyName} logo`}
+                className="h-9 w-9 rounded-lg border border-surface-border object-cover"
+                src={branding.logoUrl}
+              />
+            ) : (
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-[11px] font-bold text-white">
+                {branding.initials}
+              </div>
+            )}
             <div className="md:hidden xl:block">
-              <p className="text-[9px] font-mono uppercase tracking-[0.18em] text-text-secondary">Brand Radar</p>
+              <p className="truncate text-[9px] font-mono uppercase tracking-[0.18em] text-text-secondary">{branding.companyName}</p>
               <p className="mt-0.5 text-[13px] font-semibold text-ink">Enterprise GEO</p>
             </div>
           </div>
@@ -186,7 +207,23 @@ function SidebarContent({ pathname, selectedClientId }: { pathname: string; sele
   );
 }
 
-export function AppShell({ children, hideSidebar = false, clients = [], accessToken = null }: AppShellProps) {
+export function AppShell({ children, hideSidebar = false, clients = [], accessToken = null, branding = fallbackBranding }: AppShellProps) {
+  const resolvedBranding: BrandingConfig = {
+    ...fallbackBranding,
+    ...branding
+  };
+
+  return (
+    <BrandingProvider branding={resolvedBranding}>
+      <AppShellFrame accessToken={accessToken} clients={clients} hideSidebar={hideSidebar}>
+        {children}
+      </AppShellFrame>
+    </BrandingProvider>
+  );
+}
+
+function AppShellFrame({ children, hideSidebar = false, clients = [], accessToken = null }: Omit<AppShellProps, "branding">) {
+  const branding = useBranding();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -297,6 +334,20 @@ export function AppShell({ children, hideSidebar = false, clients = [], accessTo
               <div className="hidden md:block">
                 <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">Workspace</p>
                 <p className="mt-0.5 text-sm font-semibold text-ink">{activeItem?.label ?? "Dashboard"}</p>
+              </div>
+
+              <div className="hidden items-center gap-2 rounded-xl border border-surface-border bg-white/70 px-2.5 py-1.5 lg:flex">
+                {branding.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    alt={`${branding.companyName} logo`}
+                    className="h-6 w-6 rounded-md border border-surface-border object-cover"
+                    src={branding.logoUrl}
+                  />
+                ) : (
+                  <span className="grid h-6 w-6 place-items-center rounded-md bg-brand text-[9px] font-bold text-white">{branding.initials}</span>
+                )}
+                <span className="max-w-[150px] truncate text-[11px] font-semibold text-ink">{branding.companyName}</span>
               </div>
 
               <div className="relative hidden lg:block" ref={clientMenuRef}>
@@ -411,14 +462,19 @@ export function AppShell({ children, hideSidebar = false, clients = [], accessTo
 }
 
 export function DashboardHeader({ title, description, actions }: DashboardHeaderProps) {
+  const branding = useBranding();
+
   return (
     <section className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">Brand Radar Intelligence</p>
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">{branding.companyName} Intelligence</p>
         <h1 className="mt-2 text-[1.9rem] font-semibold leading-tight text-ink md:text-[2.4rem]">{title}</h1>
         {description ? <p className="mt-2 text-sm leading-relaxed text-text-secondary">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {actions}
+        <PageExportButton />
+      </div>
     </section>
   );
 }

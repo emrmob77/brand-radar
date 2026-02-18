@@ -25,6 +25,47 @@ export const initialWhiteLabelFormState: WhiteLabelFormState = {
   success: null
 };
 
+function isValidHostname(value: string) {
+  if (value.length > 253) {
+    return false;
+  }
+
+  const labels = value.split(".");
+  if (labels.length < 2) {
+    return false;
+  }
+
+  return labels.every((label) => {
+    if (!label || label.length > 63) {
+      return false;
+    }
+
+    if (label.startsWith("-") || label.endsWith("-")) {
+      return false;
+    }
+
+    return /^[a-z0-9-]+$/.test(label);
+  });
+}
+
+function normalizeCustomDomain(input: string): string | null {
+  const raw = input.trim().toLowerCase();
+  if (!raw) {
+    return null;
+  }
+
+  const candidate = raw.replace(/\.$/, "");
+  const urlValue = candidate.startsWith("http://") || candidate.startsWith("https://") ? candidate : `https://${candidate}`;
+
+  try {
+    const parsed = new URL(urlValue);
+    const hostname = parsed.hostname.toLowerCase();
+    return isValidHostname(hostname) ? hostname : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateWhiteLabelAction(
   _prev: WhiteLabelFormState,
   formData: FormData
@@ -53,6 +94,38 @@ export async function updateWhiteLabelAction(
   }
 
   const supabase = createServerSupabaseClient(accessToken);
+  const customDomainEntry = formData.get("customDomain");
+  const rawCustomDomain = typeof customDomainEntry === "string" ? customDomainEntry : "";
+  const normalizedCustomDomain = normalizeCustomDomain(rawCustomDomain);
+
+  if (rawCustomDomain.trim().length > 0 && !normalizedCustomDomain) {
+    return {
+      error: "Custom domain must be a valid hostname (example: geo.youragency.com).",
+      success: null
+    };
+  }
+
+  if (normalizedCustomDomain) {
+    const existingDomain = await supabase
+      .from("agencies")
+      .select("id")
+      .eq("custom_domain", normalizedCustomDomain)
+      .neq("id", currentUser.agencyId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingDomain.error) {
+      return { error: existingDomain.error.message, success: null };
+    }
+
+    if (existingDomain.data?.id) {
+      return {
+        error: "This custom domain is already in use by another workspace.",
+        success: null
+      };
+    }
+  }
+
   let logoUrl: string | undefined;
   const logo = formData.get("logo");
 
@@ -76,11 +149,13 @@ export async function updateWhiteLabelAction(
     name: string;
     primary_color: string;
     secondary_color: string;
+    custom_domain: string | null;
     logo_url?: string;
   } = {
     name: parsed.data.companyName,
     primary_color: parsed.data.primaryColor,
-    secondary_color: parsed.data.secondaryColor
+    secondary_color: parsed.data.secondaryColor,
+    custom_domain: normalizedCustomDomain
   };
 
   if (logoUrl) {
@@ -95,6 +170,7 @@ export async function updateWhiteLabelAction(
     return { error: updateResult.error.message, success: null };
   }
 
+  revalidatePath("/", "layout");
   revalidatePath("/settings");
   revalidatePath("/settings/white-label");
   return {

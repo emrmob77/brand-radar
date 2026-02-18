@@ -363,7 +363,7 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Seçilen toplamaya göre grafikleri güncelle
     - _Gereksinimler: 12.6_
 
-- [ ] 15. Kullanıcı Yönetimi ve Yetkilendirme
+- [x] 15. Kullanıcı Yönetimi ve Yetkilendirme
   - [x] 15.1 Kullanıcı yönetimi sayfası oluştur (yalnızca admin)
     - Ajanstaki tüm kullanıcıları listelemek için sayfa oluştur
     - Email, rol ve son giriş ile kullanıcı kartları göster
@@ -389,32 +389,32 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Uygun sayfaya yönlendir
     - _Gereksinimler: 10.6_
 
-- [ ] 16. White-Label Yapılandırması
+- [x] 16. White-Label Yapılandırması
   - [x] 16.1 White-label formuyla Ayarlar sayfası oluştur
     - Ajans logosu yükleme, birincil renk, ikincil renk ve şirket adıyla form oluştur
     - Renk seçici bileşenleri ekle
     - Form doğrulaması uygula
     - _Gereksinimler: 13.1, 13.2_
   
-  - [ ] 16.2 White-label tema uygulamasını uygula
+  - [x] 16.2 White-label tema uygulamasını uygula
     - White-label ayarlarını saklamak için tema context'i oluştur
     - CSS değişkenlerini kullanarak UI öğelerine özel renkleri uygula
     - Kenar çubuğu ve başlıkta logoyu güncelle
     - _Gereksinimler: 13.3_
   
-  - [ ] 16.3 Özel domain yapılandırması ekle
+  - [x] 16.3 Özel domain yapılandırması ekle
     - Özel domain girişi için form oluştur
     - DNS yapılandırma talimatları ekle
     - Özel domain'i veritabanında sakla
     - _Gereksinimler: 13.4_
   
-  - [ ] 16.4 Email bildirimlerine markalama uygula
+  - [x] 16.4 Email bildirimlerine markalama uygula
     - White-label desteğiyle email şablonları oluştur
     - Email'lerde ajans logosu ve renklerini kullan
     - _Gereksinimler: 13.5_
 
 - [ ] 17. Veri Dışa Aktarma ve Raporlama
-  - [ ] 17.1 Dışa aktarma işlevselliği oluştur
+  - [x] 17.1 Dışa aktarma işlevselliği oluştur
     - İlgili sayfalara dışa aktarma butonu ekle
     - Format seçimiyle (CSV, PDF, JSON) modal oluştur
     - Veri dışa aktarma için Server Action uygula

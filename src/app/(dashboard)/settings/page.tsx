@@ -6,11 +6,24 @@ import { DashboardHeader } from "@/components/layout/geo-shell";
 import { WhiteLabelForm } from "@/components/settings/white-label-form";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+function resolveDnsTarget() {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!appUrl) {
+    return "app.brandradar.ai";
+  }
+
+  try {
+    return new URL(appUrl).hostname;
+  } catch {
+    return appUrl.replace(/^https?:\/\//, "").split("/")[0] || "app.brandradar.ai";
+  }
+}
+
 async function getAgencyBranding(accessToken: string, agencyId: string) {
   const supabase = createServerSupabaseClient(accessToken);
   const { data } = await supabase
     .from("agencies")
-    .select("name,logo_url,primary_color,secondary_color")
+    .select("name,logo_url,primary_color,secondary_color,custom_domain")
     .eq("id", agencyId)
     .maybeSingle();
 
@@ -18,7 +31,8 @@ async function getAgencyBranding(accessToken: string, agencyId: string) {
     name: data?.name ?? "Agency",
     logoUrl: data?.logo_url ?? null,
     primaryColor: data?.primary_color ?? "#376df6",
-    secondaryColor: data?.secondary_color ?? "#2563eb"
+    secondaryColor: data?.secondary_color ?? "#2563eb",
+    customDomain: data?.custom_domain ?? null
   };
 }
 
@@ -27,6 +41,7 @@ export default async function SettingsPage() {
   const currentUser = await getCurrentUser(accessToken);
 
   const agency = currentUser && accessToken ? await getAgencyBranding(accessToken, currentUser.agencyId) : null;
+  const dnsTarget = resolveDnsTarget();
 
   return (
     <div className="mx-auto w-full max-w-[1320px]">
@@ -60,7 +75,7 @@ export default async function SettingsPage() {
       </section>
 
       {currentUser?.role === "admin" && agency ? (
-        <WhiteLabelForm agency={agency} />
+        <WhiteLabelForm agency={agency} dnsTarget={dnsTarget} />
       ) : (
         <section className="surface-panel p-6 text-sm text-text-secondary">
           White-label configuration is visible to admin users only.

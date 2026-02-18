@@ -12,7 +12,9 @@ type WhiteLabelFormProps = {
     logoUrl: string | null;
     primaryColor: string;
     secondaryColor: string;
+    customDomain: string | null;
   };
+  dnsTarget: string;
 };
 
 function SaveButton() {
@@ -28,7 +30,7 @@ function SaveButton() {
   );
 }
 
-export function WhiteLabelForm({ agency }: WhiteLabelFormProps) {
+export function WhiteLabelForm({ agency, dnsTarget }: WhiteLabelFormProps) {
   const [state, formAction] = useFormState(updateWhiteLabelAction, initialWhiteLabelFormState);
 
   return (
@@ -74,6 +76,38 @@ export function WhiteLabelForm({ agency }: WhiteLabelFormProps) {
           <img alt="Agency logo" className="mt-2 h-14 w-14 rounded-xl border border-surface-border object-cover" src={agency.logoUrl} />
         </div>
       ) : null}
+
+      <div className="mt-6 rounded-2xl border border-surface-border bg-brand-soft/40 p-4">
+        <p className="text-sm font-semibold text-ink">Custom Domain</p>
+        <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+          Use a branded subdomain for client access. Example: <span className="font-mono text-ink">geo.youragency.com</span>. Leave empty to disable custom domain routing.
+        </p>
+
+        <label className="mt-3 block text-sm">
+          <span className="mb-1 block font-medium text-ink">Custom Domain Hostname</span>
+          <input
+            className="focus-ring min-h-11 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-sm text-ink placeholder:text-text-secondary"
+            defaultValue={agency.customDomain ?? ""}
+            name="customDomain"
+            placeholder="geo.youragency.com"
+            type="text"
+          />
+        </label>
+
+        <div className="mt-4 rounded-xl border border-surface-border bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">DNS Setup</p>
+          <ol className="mt-2 space-y-1.5 text-xs text-text-secondary">
+            <li>1. DNS provider panelinde bir `CNAME` kaydı oluşturun.</li>
+            <li>
+              2. Host/Name alanına kullanmak istediğiniz subdomaini girin (örnek: <span className="font-mono text-ink">geo</span>).
+            </li>
+            <li>
+              3. Target/Value alanını <span className="font-mono text-ink">{dnsTarget}</span> olarak ayarlayın.
+            </li>
+            <li>4. TTL değerini `Auto` bırakın ve DNS yayılımını bekleyin.</li>
+          </ol>
+        </div>
+      </div>
 
       {state.error ? (
         <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{state.error}</p>

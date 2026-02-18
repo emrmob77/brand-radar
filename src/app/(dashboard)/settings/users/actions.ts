@@ -6,6 +6,8 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { sendEmailWithResend } from "@/lib/email/resend";
+import { buildInvitationEmailTemplate, type EmailBranding } from "@/lib/email/templates";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const inviteSchema = z.object({
@@ -23,6 +25,31 @@ export const initialInviteUserFormState: InviteUserFormState = {
   error: null,
   success: null
 };
+
+function normalizeHexColor(value: string | null | undefined, fallback: string) {
+  if (!value) {
+    return fallback;
+  }
+
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+}
+
+function getInvitationActionLink(data: unknown): string | null {
+  const maybeData = data as {
+    properties?: { action_link?: string };
+    action_link?: string;
+  } | null;
+
+  if (typeof maybeData?.properties?.action_link === "string" && maybeData.properties.action_link) {
+    return maybeData.properties.action_link;
+  }
+
+  if (typeof maybeData?.action_link === "string" && maybeData.action_link) {
+    return maybeData.action_link;
+  }
+
+  return null;
+}
 
 function defaultNameFromEmail(email: string) {
   const local = email.split("@")[0] ?? "Invited User";
@@ -63,6 +90,35 @@ async function ensureInviteAlertRule(
   return created.data?.id ?? null;
 }
 
+async function getAgencyEmailBranding(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  agencyId: string
+): Promise<EmailBranding> {
+  const fallback: EmailBranding = {
+    companyName: "Brand Radar",
+    logoUrl: null,
+    primaryColor: "#171a20",
+    secondaryColor: "#2563eb"
+  };
+
+  const agencyResult = await supabase
+    .from("agencies")
+    .select("name,logo_url,primary_color,secondary_color")
+    .eq("id", agencyId)
+    .maybeSingle();
+
+  if (agencyResult.error || !agencyResult.data) {
+    return fallback;
+  }
+
+  return {
+    companyName: agencyResult.data.name ?? fallback.companyName,
+    logoUrl: agencyResult.data.logo_url ?? null,
+    primaryColor: normalizeHexColor(agencyResult.data.primary_color, fallback.primaryColor),
+    secondaryColor: normalizeHexColor(agencyResult.data.secondary_color, fallback.secondaryColor)
+  };
+}
+
 export async function inviteUserAction(
   _prev: InviteUserFormState,
   formData: FormData
@@ -96,27 +152,90 @@ export async function inviteUserAction(
   const supabase = createServerSupabaseClient(accessToken);
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const emailFrom = process.env.EMAIL_FROM?.trim();
   const redirectTo = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/login` : undefined;
+  const agencyBranding = await getAgencyEmailBranding(supabase, actor.agencyId);
 
   if (serviceRoleKey && supabaseUrl) {
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
-    const inviteResult = await serviceClient.auth.admin.inviteUserByEmail(parsed.data.email, {
-      data: {
-        agency_id: actor.agencyId,
-        role: parsed.data.role,
-        client_ids: parsed.data.clientIds
-      },
-      redirectTo
-    });
+    let invitedUserId: string | undefined;
+    let brandedDeliveryEnabled = false;
 
-    if (inviteResult.error) {
-      return { error: inviteResult.error.message, success: null };
+    if (resendApiKey && emailFrom) {
+      const linkResult = await serviceClient.auth.admin.generateLink({
+        type: "invite",
+        email: parsed.data.email,
+        options: {
+          data: {
+            agency_id: actor.agencyId,
+            role: parsed.data.role,
+            client_ids: parsed.data.clientIds
+          },
+          redirectTo
+        }
+      });
+
+      if (linkResult.error) {
+        return { error: linkResult.error.message, success: null };
+      }
+
+      invitedUserId = linkResult.data.user?.id;
+      const actionLink = getInvitationActionLink(linkResult.data);
+
+      if (!actionLink) {
+        return { error: "Failed to generate invitation link.", success: null };
+      }
+
+      const template = buildInvitationEmailTemplate({
+        branding: agencyBranding,
+        recipientEmail: parsed.data.email,
+        preheader: `${agencyBranding.companyName} invited you to the dashboard.`,
+        title: "You were invited to Brand Radar",
+        intro: `${actor.fullName} added you to ${agencyBranding.companyName}'s workspace.`,
+        bulletPoints: [
+          `Role: ${parsed.data.role}`,
+          `Client permissions: ${parsed.data.clientIds.length} selected`,
+          "Use the secure link below to activate your account."
+        ],
+        ctaLabel: "Accept Invitation",
+        ctaUrl: actionLink
+      });
+
+      const sendResult = await sendEmailWithResend({
+        apiKey: resendApiKey,
+        from: emailFrom,
+        to: parsed.data.email,
+        subject: template.subject,
+        html: template.html,
+        text: template.text
+      });
+
+      if (!sendResult.ok) {
+        return { error: sendResult.error, success: null };
+      }
+
+      brandedDeliveryEnabled = true;
+    } else {
+      const inviteResult = await serviceClient.auth.admin.inviteUserByEmail(parsed.data.email, {
+        data: {
+          agency_id: actor.agencyId,
+          role: parsed.data.role,
+          client_ids: parsed.data.clientIds
+        },
+        redirectTo
+      });
+
+      if (inviteResult.error) {
+        return { error: inviteResult.error.message, success: null };
+      }
+
+      invitedUserId = inviteResult.data.user?.id;
     }
 
-    const invitedUserId = inviteResult.data.user?.id;
     if (invitedUserId) {
       const upsertResult = await serviceClient.from("users").upsert(
         {
@@ -136,7 +255,9 @@ export async function inviteUserAction(
     revalidatePath("/settings/users");
     return {
       error: null,
-      success: `Invitation sent to ${parsed.data.email}.`
+      success: brandedDeliveryEnabled
+        ? `Branded invitation sent to ${parsed.data.email}.`
+        : `Invitation sent to ${parsed.data.email}. Configure RESEND_API_KEY and EMAIL_FROM for branded email templates.`
     };
   }
 
