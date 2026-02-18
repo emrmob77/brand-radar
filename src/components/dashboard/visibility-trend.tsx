@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import type { VisibilityTrendPayload } from "@/app/(dashboard)/actions/visibility-trend";
@@ -9,7 +9,7 @@ type VisibilityTrendProps = {
   payload: VisibilityTrendPayload;
 };
 
-export function VisibilityTrend({ payload }: VisibilityTrendProps) {
+function VisibilityTrendComponent({ payload }: VisibilityTrendProps) {
   const allSlugs = useMemo(() => payload.platforms.map((platform) => platform.slug), [payload.platforms]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(allSlugs);
 
@@ -63,8 +63,10 @@ export function VisibilityTrend({ payload }: VisibilityTrendProps) {
               .filter((platform) => selectedPlatforms.includes(platform.slug))
               .map((platform) => (
                 <Line
+                  animationDuration={220}
                   dataKey={platform.slug}
                   dot={false}
+                  isAnimationActive={selectedPlatforms.length <= 3}
                   key={platform.slug}
                   name={platform.slug}
                   stroke={platform.color}
@@ -78,3 +80,5 @@ export function VisibilityTrend({ payload }: VisibilityTrendProps) {
     </div>
   );
 }
+
+export const VisibilityTrend = memo(VisibilityTrendComponent);

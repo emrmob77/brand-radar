@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { HallucinationRiskLevel, HallucinationRow } from "@/app/(dashboard)/actions/hallucinations";
 
@@ -17,7 +17,7 @@ const riskColors: Record<HallucinationRiskLevel, string> = {
   low: "#22c55e"
 };
 
-export function PlatformRiskChart({ rows }: PlatformRiskChartProps) {
+function PlatformRiskChartComponent({ rows }: PlatformRiskChartProps) {
   const [platformFilter, setPlatformFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
 
@@ -110,10 +110,10 @@ export function PlatformRiskChart({ rows }: PlatformRiskChartProps) {
             <XAxis dataKey="platform" tick={{ fontSize: 11 }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
             <Tooltip />
-            <Bar dataKey="critical" fill={riskColors.critical} stackId="risk" />
-            <Bar dataKey="high" fill={riskColors.high} stackId="risk" />
-            <Bar dataKey="medium" fill={riskColors.medium} stackId="risk" />
-            <Bar dataKey="low" fill={riskColors.low} stackId="risk" />
+            <Bar animationDuration={220} dataKey="critical" fill={riskColors.critical} stackId="risk" />
+            <Bar animationDuration={220} dataKey="high" fill={riskColors.high} stackId="risk" />
+            <Bar animationDuration={220} dataKey="medium" fill={riskColors.medium} stackId="risk" />
+            <Bar animationDuration={220} dataKey="low" fill={riskColors.low} stackId="risk" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -127,3 +127,5 @@ export function PlatformRiskChart({ rows }: PlatformRiskChartProps) {
     </section>
   );
 }
+
+export const PlatformRiskChart = memo(PlatformRiskChartComponent);

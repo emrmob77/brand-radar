@@ -2,9 +2,12 @@
 
 import { Download, FileJson, FileSpreadsheet, FileText, Loader2, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
+  listExportClientsAction,
+  requestBulkDataExportAction,
   requestDataExportAction,
+  type ExportClientOption,
   type RequestExportInput
 } from "@/app/(dashboard)/actions/exports";
 import { cn } from "@/lib/utils";
@@ -76,24 +79,110 @@ export function PageExportButton() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>("csv");
+  const [exportMode, setExportMode] = useState<"single" | "bulk">("single");
   const [error, setError] = useState<string | null>(null);
   const [lastSuccess, setLastSuccess] = useState<string | null>(null);
+  const [clients, setClients] = useState<ExportClientOption[]>([]);
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const mapping = useMemo(() => resolveScope(pathname), [pathname]);
+  const activeScope = mapping ?? { scope: "overview", label: "Executive Dashboard" };
   const clientId = searchParams.get("clientId");
 
-  if (!mapping) {
-    return null;
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let mounted = true;
+
+    async function loadClients() {
+      setClientsLoading(true);
+      const result = await listExportClientsAction();
+      if (!mounted) {
+        return;
+      }
+
+      if (!result.ok) {
+        setClients([]);
+        setClientsLoading(false);
+        setError(result.error);
+        return;
+      }
+
+      setClients(result.clients);
+      const idSet = new Set(result.clients.map((client) => client.id));
+
+      setSelectedClientIds((previous) => {
+        const kept = previous.filter((id) => idSet.has(id));
+        if (kept.length > 0) {
+          return kept;
+        }
+
+        if (clientId && idSet.has(clientId)) {
+          return [clientId];
+        }
+
+        return result.clients.slice(0, 2).map((client) => client.id);
+      });
+
+      setClientsLoading(false);
+    }
+
+    void loadClients();
+
+    return () => {
+      mounted = false;
+    };
+  }, [open, clientId]);
+
+  function toggleClient(clientEntryId: string) {
+    setSelectedClientIds((previous) => {
+      if (previous.includes(clientEntryId)) {
+        return previous.filter((id) => id !== clientEntryId);
+      }
+      return [...previous, clientEntryId];
+    });
   }
 
-  const activeScope = mapping;
+  function toggleAllClients() {
+    if (selectedClientIds.length === clients.length) {
+      setSelectedClientIds([]);
+      return;
+    }
+    setSelectedClientIds(clients.map((client) => client.id));
+  }
 
   function handleExport() {
     setError(null);
     setLastSuccess(null);
 
     startTransition(async () => {
+      if (exportMode === "bulk") {
+        if (selectedClientIds.length < 2) {
+          setError("Select at least two clients for bulk export.");
+          return;
+        }
+
+        const bulkResult = await requestBulkDataExportAction({
+          format: selectedFormat,
+          scope: activeScope.scope,
+          clientIds: selectedClientIds
+        });
+
+        if (!bulkResult.ok) {
+          setError(bulkResult.error);
+          return;
+        }
+
+        triggerDownload(bulkResult.fileName, bulkResult.mimeType, bulkResult.contentBase64);
+        setLastSuccess(`${bulkResult.rowCount} rows exported across ${selectedClientIds.length} clients.`);
+        setOpen(false);
+        return;
+      }
+
       const result = await requestDataExportAction({
         format: selectedFormat,
         scope: activeScope.scope,
@@ -109,6 +198,10 @@ export function PageExportButton() {
       setLastSuccess(`${result.rowCount} row exported.`);
       setOpen(false);
     });
+  }
+
+  if (!mapping) {
+    return null;
   }
 
   return (
@@ -169,6 +262,77 @@ export function PageExportButton() {
               })}
             </div>
 
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                className={cn(
+                  "focus-ring min-h-11 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors",
+                  exportMode === "single"
+                    ? "border-brand/35 bg-brand-soft text-ink"
+                    : "border-surface-border bg-white text-text-secondary hover:bg-brand-soft/70"
+                )}
+                onClick={() => setExportMode("single")}
+                type="button"
+              >
+                Current Filter
+              </button>
+              <button
+                className={cn(
+                  "focus-ring min-h-11 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors",
+                  exportMode === "bulk"
+                    ? "border-brand/35 bg-brand-soft text-ink"
+                    : "border-surface-border bg-white text-text-secondary hover:bg-brand-soft/70"
+                )}
+                onClick={() => setExportMode("bulk")}
+                type="button"
+              >
+                Bulk (ZIP)
+              </button>
+            </div>
+
+            {exportMode === "bulk" ? (
+              <div className="mt-4 rounded-xl border border-surface-border bg-white p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-ink">Clients</p>
+                  <button
+                    className="focus-ring min-h-10 rounded-lg border border-surface-border px-2.5 py-1.5 text-[11px] font-semibold text-text-secondary hover:bg-brand-soft"
+                    onClick={toggleAllClients}
+                    type="button"
+                  >
+                    {selectedClientIds.length === clients.length ? "Clear all" : "Select all"}
+                  </button>
+                </div>
+
+                {clientsLoading ? (
+                  <p className="text-xs text-text-secondary">Loading clients...</p>
+                ) : clients.length === 0 ? (
+                  <p className="text-xs text-text-secondary">No clients found for this workspace.</p>
+                ) : (
+                  <div className="max-h-44 space-y-1 overflow-y-auto pr-1">
+                    {clients.map((clientEntry) => {
+                      const checked = selectedClientIds.includes(clientEntry.id);
+                      return (
+                        <label
+                          className={cn(
+                            "flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5",
+                            checked ? "border-brand/35 bg-brand-soft" : "border-surface-border hover:bg-brand-soft/60"
+                          )}
+                          key={clientEntry.id}
+                        >
+                          <input
+                            checked={checked}
+                            className="h-4 w-4 accent-brand"
+                            onChange={() => toggleClient(clientEntry.id)}
+                            type="checkbox"
+                          />
+                          <span className="truncate text-xs font-medium text-ink">{clientEntry.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             {error ? (
               <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
             ) : null}
@@ -178,7 +342,9 @@ export function PageExportButton() {
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] text-text-secondary">
-                Export scope uses {clientId ? "selected client filter" : "current workspace filter"}.
+                {exportMode === "bulk"
+                  ? "Bulk export generates one file per selected client and packs them into ZIP."
+                  : `Export scope uses ${clientId ? "selected client filter" : "current workspace filter"}.`}
               </p>
               <button
                 className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"

@@ -1,14 +1,13 @@
 import { Building2, Sparkles, TrendingUp, TriangleAlert } from "lucide-react";
 import { cookies } from "next/headers";
 import { getDashboardMetricCards } from "@/app/(dashboard)/actions/metrics";
+import { getMentionFeedPage, type MentionFeedRow } from "@/app/(dashboard)/actions/mentions";
 import { getVisibilityTrendPayload } from "@/app/(dashboard)/actions/visibility-trend";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/session";
 import { LiveMentionsFeed } from "@/components/dashboard/live-mentions-feed";
-import type { MentionRow } from "@/components/dashboard/live-mentions-feed";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { VisibilityTrend } from "@/components/dashboard/visibility-trend";
 import { DashboardHeader } from "@/components/layout/geo-shell";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const mentions = [
   {
@@ -40,31 +39,17 @@ async function getInitialMentions(clientId: string | null) {
     };
   }
 
-  const supabase = createServerSupabaseClient(accessToken);
-  const baseQuery = supabase
-    .from("mentions")
-    .select("id,query,content,sentiment,detected_at,platforms(name)")
-    .order("detected_at", { ascending: false })
-    .limit(20);
-  const { data } = clientId ? await baseQuery.eq("client_id", clientId) : await baseQuery;
-
-  const rows: MentionRow[] = (data ?? []).map((item) => {
-    const platformRelation = Array.isArray(item.platforms) ? item.platforms[0] : item.platforms;
-
-    return {
-      id: String(item.id),
-      platform: platformRelation?.name ?? "Unknown",
-      sentiment: (item.sentiment as "positive" | "neutral" | "negative") ?? "neutral",
-      query: item.query,
-      excerpt: item.content,
-      detectedAt: item.detected_at
-    };
+  const page = await getMentionFeedPage({
+    clientId,
+    page: 0,
+    pageSize: 20
   });
+  const rows = page.rows;
 
   if (rows.length === 0) {
     return {
       accessToken,
-      rows: mentions.map((item, index): MentionRow => ({
+      rows: mentions.map((item, index): MentionFeedRow => ({
         id: `mock-${index}`,
         platform: item.platform,
         sentiment: item.platform === "Claude" ? "negative" : "neutral",

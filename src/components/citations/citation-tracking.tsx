@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type TrendRow = {
@@ -15,7 +16,7 @@ type CitationTrackingProps = {
   lostCount: number;
 };
 
-export function CitationTracking({ rows, gainedCount, lostCount }: CitationTrackingProps) {
+function CitationTrackingComponent({ rows, gainedCount, lostCount }: CitationTrackingProps) {
   return (
     <section className="surface-panel p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -37,8 +38,8 @@ export function CitationTracking({ rows, gainedCount, lostCount }: CitationTrack
             <YAxis allowDecimals={false} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="gained" fill="#22c55e" name="Gained" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="lost" fill="#ef4444" name="Lost" radius={[4, 4, 0, 0]} />
+            <Bar animationDuration={220} dataKey="gained" fill="#22c55e" name="Gained" radius={[4, 4, 0, 0]} />
+            <Bar animationDuration={220} dataKey="lost" fill="#ef4444" name="Lost" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -46,3 +47,4 @@ export function CitationTracking({ rows, gainedCount, lostCount }: CitationTrack
   );
 }
 
+export const CitationTracking = memo(CitationTrackingComponent);

@@ -25,6 +25,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NotificationBell } from "@/components/alerts/notification-bell";
 import { PageExportButton } from "@/components/export/page-export-button";
 import { BrandingProvider, type BrandingConfig, useBranding } from "@/components/providers/branding-provider";
+import { GlobalSearch } from "@/components/search/global-search";
 import { mainNavigation, NavIcon, NavItem, systemNavigation } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -404,17 +405,8 @@ function AppShellFrame({ children, hideSidebar = false, clients = [], accessToke
                 ) : null}
               </div>
 
-              <div className="hidden items-center gap-2 rounded-xl border border-surface-border bg-white px-3 py-2 lg:flex">
-                <Search className="h-4 w-4 text-text-secondary" />
-                <label className="sr-only" htmlFor="global-search">
-                  Search
-                </label>
-                <input
-                  className="w-60 bg-transparent text-sm text-ink placeholder:text-text-secondary focus:outline-none"
-                  id="global-search"
-                  placeholder="Search clients, mentions, alerts"
-                  type="text"
-                />
+              <div className="hidden lg:block">
+                <GlobalSearch clientId={selectedClient?.id ?? null} />
               </div>
             </div>
 

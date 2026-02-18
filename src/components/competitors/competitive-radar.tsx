@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from "recharts";
 
 export type CompetitiveRadarSeries = {
@@ -18,7 +19,7 @@ type CompetitiveRadarProps = {
   series: CompetitiveRadarSeries[];
 };
 
-export function CompetitiveRadar({ data, series }: CompetitiveRadarProps) {
+function CompetitiveRadarComponent({ data, series }: CompetitiveRadarProps) {
   return (
     <section className="surface-panel p-6">
       <h2 className="text-lg font-bold text-ink">Competitive Landscape Radar</h2>
@@ -30,6 +31,7 @@ export function CompetitiveRadar({ data, series }: CompetitiveRadarProps) {
             <PolarRadiusAxis angle={90} domain={[0, 100]} />
             {series.map((item) => (
               <Radar
+                animationDuration={240}
                 dataKey={item.key}
                 fill={item.color}
                 fillOpacity={0.12}
@@ -48,3 +50,4 @@ export function CompetitiveRadar({ data, series }: CompetitiveRadarProps) {
   );
 }
 
+export const CompetitiveRadar = memo(CompetitiveRadarComponent);

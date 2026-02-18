@@ -413,76 +413,76 @@ Her görev çalıştırılmadan önce ilgili gereksinimleri requirements.md'den 
     - Email'lerde ajans logosu ve renklerini kullan
     - _Gereksinimler: 13.5_
 
-- [ ] 17. Veri Dışa Aktarma ve Raporlama
+- [x] 17. Veri Dışa Aktarma ve Raporlama
   - [x] 17.1 Dışa aktarma işlevselliği oluştur
     - İlgili sayfalara dışa aktarma butonu ekle
     - Format seçimiyle (CSV, PDF, JSON) modal oluştur
     - Veri dışa aktarma için Server Action uygula
     - _Gereksinimler: 14.1, 14.2_
   
-  - [ ] 17.2 PDF rapor oluşturmayı uygula
+  - [x] 17.2 PDF rapor oluşturmayı uygula
     - Grafikler ve tablolarla PDF şablonu oluştur
     - jsPDF veya Puppeteer gibi kütüphane kullan
     - Biçimlendirilmiş veri ve görselleştirmeleri dahil et
     - _Gereksinimler: 14.3_
   
-  - [ ] 17.3 Birden fazla müşteri için toplu dışa aktarma ekle
+  - [x] 17.3 Birden fazla müşteri için toplu dışa aktarma ekle
     - Müşteri seçimi için çoklu seçim oluştur
     - Her müşteri için ayrı dosyalar oluştur
     - İndirme için ZIP arşivi oluştur
     - _Gereksinimler: 14.4, 14.5_
   
-  - [ ] 17.4 Dışa aktarma denetim günlüğünü uygula
+  - [x] 17.4 Dışa aktarma denetim günlüğünü uygula
     - Denetim günlüğü tablosu oluştur
     - Tüm dışa aktarma işlemlerini kullanıcı, zaman damgası ve veri kapsamıyla günlükle
     - Ayarlarda denetim günlüğünü göster
     - _Gereksinimler: 14.6_
 
-- [ ] 18. Arama ve Filtreleme
-  - [ ] 18.1 Global arama bileşeni oluştur
+- [x] 18. Arama ve Filtreleme
+  - [x] 18.1 Global arama bileşeni oluştur
     - Başlıkta arama çubuğu oluştur
     - Bahsetmeler, alıntılar ve sorgular arasında gerçek zamanlı arama uygula
     - Arama sonuçlarını dropdown'da göster
     - _Gereksinimler: 18.1, 18.2_
   
-  - [ ] 18.2 Gelişmiş filtreleme uygula
+  - [x] 18.2 Gelişmiş filtreleme uygula
     - Birden fazla seçenekle filtre dropdown'ı oluştur
     - Platform, duygu, tarih aralığı ve risk seviyesi filtrelerini destekle
     - Aynı anda birden fazla filtreye izin ver
     - _Gereksinimler: 18.3, 18.4_
   
-  - [ ] 18.3 Filtre chip'leri bileşeni oluştur
+  - [x] 18.3 Filtre chip'leri bileşeni oluştur
     - Aktif filtreleri kaldırılabilir chip'ler olarak göster
     - Filtreyi kaldırmak için tıklama ekle
     - Filtreler değiştiğinde sonuçları güncelle
     - _Gereksinimler: 18.5, 18.6_
 
-- [ ] 19. Performans Optimizasyonu
-  - [ ] 19.1 React Query önbelleklemeyi uygula
+- [x] 19. Performans Optimizasyonu
+  - [x] 19.1 React Query önbelleklemeyi uygula
     - Önbellek yapılandırmasıyla React Query istemcisi ayarla
     - Tüm veri getirme için sorgu anahtarları ekle
     - Stale time ve cache time'ı yapılandır
     - _Gereksinimler: 15.3, 15.4_
   
-  - [ ] 19.2 Sayfalama ve sonsuz kaydırma ekle
+  - [x] 19.2 Sayfalama ve sonsuz kaydırma ekle
     - Büyük veri tabloları için sayfalama uygula
     - Akışlar için sonsuz kaydırma ekle
     - Limitlerle sorgu performansını optimize et
     - _Gereksinimler: 15.2_
   
-  - [ ] 19.3 Grafik render'ını optimize et
+  - [x] 19.3 Grafik render'ını optimize et
     - Grafik memoization'ı uygula
     - Grafik bileşenleri için React.memo kullan
     - Animasyonlar için 60 FPS hedefle
     - _Gereksinimler: 15.5_
   
-  - [ ] 19.4 Gerçek zamanlı güncellemeleri optimize et
+  - [x] 19.4 Gerçek zamanlı güncellemeleri optimize et
     - Gerçek zamanlı veriler için seçici yeniden render'lama uygula
     - Pahalı hesaplamalar için React.memo ve useMemo kullan
     - Yeniden render'ları azaltmak için güncellemeleri toplu işle
     - _Gereksinimler: 15.6_
   
-  - [ ] 19.5 Yükleme durumları ve iskeletler ekle
+  - [x] 19.5 Yükleme durumları ve iskeletler ekle
     - Yükleme durumları için iskelet bileşenleri oluştur
     - Asenkron işlemlere yükleme göstergeleri ekle
     - Dashboard'un 2 saniyenin altında yüklenmesini sağla

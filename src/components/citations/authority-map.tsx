@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Cell, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis, ResponsiveContainer } from "recharts";
 
 type AuthorityPoint = {
@@ -15,7 +16,7 @@ type AuthorityMapProps = {
 
 const palette = ["#376df6", "#22c55e", "#f59e0b", "#ef4444", "#7c3aed", "#0891b2"];
 
-export function AuthorityMap({ points }: AuthorityMapProps) {
+function AuthorityMapComponent({ points }: AuthorityMapProps) {
   if (points.length === 0) {
     return <p className="mt-4 text-sm text-text-secondary">No authority map data available for the selected range.</p>;
   }
@@ -34,7 +35,7 @@ export function AuthorityMap({ points }: AuthorityMapProps) {
               return row?.domain ?? "";
             }}
           />
-          <Scatter data={points} name="Sources">
+          <Scatter animationDuration={220} data={points} name="Sources">
             {points.map((point, index) => (
               <Cell fill={palette[index % palette.length] ?? "#376df6"} key={`${point.domain}-${point.sourceType}`} />
             ))}
@@ -44,3 +45,5 @@ export function AuthorityMap({ points }: AuthorityMapProps) {
     </div>
   );
 }
+
+export const AuthorityMap = memo(AuthorityMapComponent);

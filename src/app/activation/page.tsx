@@ -1,10 +1,19 @@
 "use client";
 
 import { CheckCircle2, ChevronLeft } from "lucide-react";
+import { Suspense } from "react";
 import { AppShell } from "@/components/layout/geo-shell";
 import { useRouter } from "next/navigation";
 
 export default function ActivationPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto w-full max-w-4xl p-6 text-sm text-text-secondary">Loading activation...</div>}>
+      <ActivationPageContent />
+    </Suspense>
+  );
+}
+
+function ActivationPageContent() {
   const router = useRouter();
 
   return (

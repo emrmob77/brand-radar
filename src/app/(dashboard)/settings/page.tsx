@@ -36,11 +36,41 @@ async function getAgencyBranding(accessToken: string, agencyId: string) {
   };
 }
 
+type ExportAuditLogRow = {
+  id: string;
+  file_name: string;
+  scope: string;
+  format: string;
+  row_count: number;
+  is_bulk: boolean;
+  created_at: string;
+};
+
+async function getExportAuditLogs(accessToken: string, agencyId: string): Promise<ExportAuditLogRow[]> {
+  const supabase = createServerSupabaseClient(accessToken);
+  const query = await supabase
+    .from("export_audit_logs")
+    .select("id,file_name,scope,format,row_count,is_bulk,created_at")
+    .eq("agency_id", agencyId)
+    .order("created_at", { ascending: false })
+    .limit(25);
+
+  if (query.error) {
+    return [];
+  }
+
+  return query.data ?? [];
+}
+
 export default async function SettingsPage() {
   const accessToken = cookies().get(ACCESS_TOKEN_COOKIE)?.value;
   const currentUser = await getCurrentUser(accessToken);
 
   const agency = currentUser && accessToken ? await getAgencyBranding(accessToken, currentUser.agencyId) : null;
+  const exportAuditLogs =
+    currentUser?.role === "admin" && currentUser && accessToken
+      ? await getExportAuditLogs(accessToken, currentUser.agencyId)
+      : [];
   const dnsTarget = resolveDnsTarget();
 
   return (
@@ -75,7 +105,47 @@ export default async function SettingsPage() {
       </section>
 
       {currentUser?.role === "admin" && agency ? (
-        <WhiteLabelForm agency={agency} dnsTarget={dnsTarget} />
+        <>
+          <WhiteLabelForm agency={agency} dnsTarget={dnsTarget} />
+
+          <section className="surface-panel mt-6 overflow-hidden">
+            <div className="border-b border-surface-border px-5 py-3">
+              <p className="text-sm font-semibold text-ink">Export Audit Log</p>
+              <p className="mt-1 text-xs text-text-secondary">Tracks export scope, format, file name, and row counts.</p>
+            </div>
+
+            {exportAuditLogs.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-text-secondary">No export events recorded yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-surface-border bg-slate-50 text-xs uppercase tracking-[0.12em] text-text-secondary">
+                      <th className="px-5 py-3">Created</th>
+                      <th className="px-5 py-3">Scope</th>
+                      <th className="px-5 py-3">Format</th>
+                      <th className="px-5 py-3">Rows</th>
+                      <th className="px-5 py-3">Mode</th>
+                      <th className="px-5 py-3">File</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exportAuditLogs.map((logRow) => (
+                      <tr className="border-b border-surface-border/70" key={logRow.id}>
+                        <td className="px-5 py-3 text-text-secondary">{new Date(logRow.created_at).toLocaleString("tr-TR")}</td>
+                        <td className="px-5 py-3 font-medium text-ink">{logRow.scope}</td>
+                        <td className="px-5 py-3 text-ink">{logRow.format.toUpperCase()}</td>
+                        <td className="px-5 py-3 text-ink">{logRow.row_count}</td>
+                        <td className="px-5 py-3 text-ink">{logRow.is_bulk ? "Bulk" : "Single"}</td>
+                        <td className="px-5 py-3 text-text-secondary">{logRow.file_name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       ) : (
         <section className="surface-panel p-6 text-sm text-text-secondary">
           White-label configuration is visible to admin users only.

@@ -1,23 +1,19 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useMemo, useRef, useState } from "react";
-
-export type MentionRow = {
-  id: string;
-  platform: string;
-  sentiment: "positive" | "neutral" | "negative";
-  query: string;
-  excerpt: string;
-  detectedAt: string;
-};
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getMentionFeedPage, type MentionFeedRow } from "@/app/(dashboard)/actions/mentions";
+import { queryKeys } from "@/lib/query/keys";
 
 type LiveMentionsFeedProps = {
   accessToken: string | null;
   clientId: string | null;
-  initialMentions: MentionRow[];
+  initialMentions: MentionFeedRow[];
 };
+
+const PAGE_SIZE = 20;
 
 function relativeTime(value: string) {
   const seconds = Math.max(Math.floor((Date.now() - new Date(value).getTime()) / 1000), 0);
@@ -27,10 +23,111 @@ function relativeTime(value: string) {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+function mergeUniqueMentions(rows: MentionFeedRow[]) {
+  const seen = new Set<string>();
+  const output: MentionFeedRow[] = [];
+
+  for (const row of rows) {
+    if (seen.has(row.id)) {
+      continue;
+    }
+    seen.add(row.id);
+    output.push(row);
+  }
+
+  return output;
+}
+
 export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: LiveMentionsFeedProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [mentions, setMentions] = useState<MentionRow[]>(initialMentions);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const pendingMentionsRef = useRef<MentionFeedRow[]>([]);
+  const flushTimerRef = useRef<number | null>(null);
+  const [liveMentions, setLiveMentions] = useState<MentionFeedRow[]>([]);
   const [newItemsCount, setNewItemsCount] = useState(0);
+
+  const feedQuery = useInfiniteQuery({
+    queryKey: queryKeys.liveMentionsFeed(clientId),
+    staleTime: 30_000,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      getMentionFeedPage({
+        clientId,
+        page: pageParam,
+        pageSize: PAGE_SIZE
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextPage ?? undefined
+  });
+
+  const pagedMentions = useMemo(() => {
+    if (!feedQuery.data) {
+      return initialMentions;
+    }
+    return feedQuery.data.pages.flatMap((page) => page.rows);
+  }, [feedQuery.data, initialMentions]);
+
+  const mentions = useMemo(() => mergeUniqueMentions([...liveMentions, ...pagedMentions]), [liveMentions, pagedMentions]);
+
+  const flushRealtimeMentions = useCallback(() => {
+    flushTimerRef.current = null;
+    if (pendingMentionsRef.current.length === 0) {
+      return;
+    }
+
+    const batch = pendingMentionsRef.current.splice(0);
+    setLiveMentions((prev) => mergeUniqueMentions([...batch, ...prev]).slice(0, 80));
+    setNewItemsCount((prev) => prev + batch.length);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const queueRealtimeMention = useCallback(
+    (row: MentionFeedRow) => {
+      pendingMentionsRef.current.push(row);
+      if (flushTimerRef.current !== null) {
+        return;
+      }
+      flushTimerRef.current = window.setTimeout(flushRealtimeMentions, 220);
+    },
+    [flushRealtimeMentions]
+  );
+
+  useEffect(() => {
+    setLiveMentions([]);
+    setNewItemsCount(0);
+    pendingMentionsRef.current = [];
+    if (flushTimerRef.current !== null) {
+      window.clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    const rootNode = containerRef.current;
+    const sentinelNode = loadMoreRef.current;
+    if (!rootNode || !sentinelNode) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) {
+          return;
+        }
+
+        if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
+          void feedQuery.fetchNextPage();
+        }
+      },
+      {
+        root: rootNode,
+        rootMargin: "140px"
+      }
+    );
+
+    observer.observe(sentinelNode);
+    return () => observer.disconnect();
+  }, [feedQuery]);
 
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -72,18 +169,16 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
           if (!data) return;
           const platformRelation = Array.isArray(data.platforms) ? data.platforms[0] : data.platforms;
 
-          const nextMention: MentionRow = {
+          const nextMention: MentionFeedRow = {
             id: String(data.id),
             platform: platformRelation?.name ?? "Unknown",
-            sentiment: (data.sentiment as MentionRow["sentiment"]) ?? "neutral",
+            sentiment: (data.sentiment as MentionFeedRow["sentiment"]) ?? "neutral",
             query: data.query,
             excerpt: data.content,
             detectedAt: data.detected_at
           };
 
-          setMentions((prev) => [nextMention, ...prev].slice(0, 20));
-          setNewItemsCount((prev) => prev + 1);
-          containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+          queueRealtimeMention(nextMention);
         }
       )
       .subscribe();
@@ -91,7 +186,15 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [accessToken, clientId, supabase]);
+  }, [accessToken, clientId, queueRealtimeMention, supabase]);
+
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current !== null) {
+        window.clearTimeout(flushTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <article className="surface-panel panel-hover p-6">
@@ -107,13 +210,22 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
       ) : null}
 
       <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1" ref={containerRef}>
+        {feedQuery.isLoading && mentions.length === 0 ? (
+          <div className="space-y-2">
+            <div className="h-16 animate-pulse rounded-xl border border-surface-border bg-brand-soft/50" />
+            <div className="h-16 animate-pulse rounded-xl border border-surface-border bg-brand-soft/50" />
+            <div className="h-16 animate-pulse rounded-xl border border-surface-border bg-brand-soft/50" />
+          </div>
+        ) : null}
+
         {mentions.map((mention) => (
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className="rounded-xl border border-surface-border bg-white p-3"
             initial={{ opacity: 0, y: 8 }}
             key={mention.id}
-            transition={{ duration: 0.2 }}
+            style={{ willChange: "transform, opacity" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold text-ink">{mention.platform}</p>
@@ -124,6 +236,16 @@ export function LiveMentionsFeed({ accessToken, clientId, initialMentions }: Liv
             <p className="mt-2 text-[11px] font-semibold capitalize text-ink">{mention.sentiment}</p>
           </motion.div>
         ))}
+
+        {!feedQuery.isLoading && mentions.length === 0 ? (
+          <p className="rounded-xl border border-surface-border bg-white px-3 py-4 text-sm text-text-secondary">No mention data yet.</p>
+        ) : null}
+
+        <div className="h-2 w-full" ref={loadMoreRef} />
+
+        {feedQuery.isFetchingNextPage ? (
+          <p className="pb-2 text-center text-xs font-semibold text-text-secondary">Loading older mentions...</p>
+        ) : null}
       </div>
     </article>
   );

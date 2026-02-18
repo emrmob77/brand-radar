@@ -2,7 +2,7 @@
 
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import type { HistoricalTrendsPayload, TrendGranularity } from "@/app/(dashboard)/actions/historical-trends";
 
 type HistoricalTrendsDashboardProps = {
@@ -19,7 +19,7 @@ function heatColor(intensity: number) {
   return "bg-slate-100";
 }
 
-export function HistoricalTrendsDashboard({ clientId, payload }: HistoricalTrendsDashboardProps) {
+function HistoricalTrendsDashboardComponent({ clientId, payload }: HistoricalTrendsDashboardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -29,13 +29,16 @@ export function HistoricalTrendsDashboard({ clientId, payload }: HistoricalTrend
   const [compareTo, setCompareTo] = useState(payload.range.compareTo);
   const [granularity, setGranularity] = useState<TrendGranularity>(payload.granularity);
 
-  const heatWeeks: typeof payload.heatmap[] = [];
-  payload.heatmap.forEach((cell, index) => {
-    const weekIndex = Math.floor(index / 7);
-    const week = heatWeeks[weekIndex] ?? [];
-    week.push(cell);
-    heatWeeks[weekIndex] = week;
-  });
+  const heatWeeks = useMemo(() => {
+    const weeks: typeof payload.heatmap[] = [];
+    payload.heatmap.forEach((cell, index) => {
+      const weekIndex = Math.floor(index / 7);
+      const week = weeks[weekIndex] ?? [];
+      week.push(cell);
+      weeks[weekIndex] = week;
+    });
+    return weeks;
+  }, [payload]);
 
   function applyFilters() {
     const params = new URLSearchParams(searchParams.toString());
@@ -114,11 +117,11 @@ export function HistoricalTrendsDashboard({ clientId, payload }: HistoricalTrend
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} yAxisId="volume" />
               <YAxis domain={[-1, 1]} tick={{ fontSize: 11 }} yAxisId="sentiment" orientation="right" />
               <Tooltip />
-              <Line dataKey="mentions" dot={false} stroke="#376df6" strokeWidth={2} yAxisId="volume" />
-              <Line dataKey="citations" dot={false} stroke="#10b981" strokeWidth={2} yAxisId="volume" />
-              <Line dataKey="sentiment" dot={false} stroke="#f59e0b" strokeWidth={2} yAxisId="sentiment" />
-              <Line dataKey="mentionsMovingShort" dot={false} stroke="#1d4ed8" strokeDasharray="6 4" strokeWidth={1.8} yAxisId="volume" />
-              <Line dataKey="mentionsMovingLong" dot={false} stroke="#0f172a" strokeDasharray="4 3" strokeWidth={1.5} yAxisId="volume" />
+              <Line animationDuration={220} dataKey="mentions" dot={false} stroke="#376df6" strokeWidth={2} yAxisId="volume" />
+              <Line animationDuration={220} dataKey="citations" dot={false} stroke="#10b981" strokeWidth={2} yAxisId="volume" />
+              <Line animationDuration={220} dataKey="sentiment" dot={false} stroke="#f59e0b" strokeWidth={2} yAxisId="sentiment" />
+              <Line animationDuration={220} dataKey="mentionsMovingShort" dot={false} stroke="#1d4ed8" strokeDasharray="6 4" strokeWidth={1.8} yAxisId="volume" />
+              <Line animationDuration={220} dataKey="mentionsMovingLong" dot={false} stroke="#0f172a" strokeDasharray="4 3" strokeWidth={1.5} yAxisId="volume" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -142,3 +145,5 @@ export function HistoricalTrendsDashboard({ clientId, payload }: HistoricalTrend
     </>
   );
 }
+
+export const HistoricalTrendsDashboard = memo(HistoricalTrendsDashboardComponent);
